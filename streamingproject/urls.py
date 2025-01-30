@@ -44,3 +44,8 @@ urlpatterns = [
     path('streaming/swagger', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('streaming/', include(('streaming.urls','streaming'))),
 ]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

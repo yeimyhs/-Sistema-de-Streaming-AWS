@@ -1,6 +1,8 @@
 from rest_framework.routers import SimpleRouter
 from streaming import views
 
+from django.conf import settings
+from django.conf.urls.static import static
 
 router = SimpleRouter()
 
@@ -15,3 +17,8 @@ router.register(r'participaciongalllos', views.ParticipacionGalllosViewSet, 'Par
 router.register(r'registroevento', views.RegistroEventoViewSet, 'RegistroEvento')
 
 urlpatterns = router.urls
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

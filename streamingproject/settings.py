@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-n@=#5t)qy#(fnr)@v3$$dg7h(!yrs303$=t*lgp*g_&^w(b-lr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['18.220.9.56']
 
 
 # Application definition
@@ -41,11 +41,15 @@ INSTALLED_APPS = [
     'rest_framework',
     'knox',
     'drf_yasg',
+    'corsheaders',
     
     'streaming',
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -85,9 +89,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'streaming',
         'USER': 'postgres',
+        #'USER':'streaminguser',
         'PASSWORD': 'yeimyhs',
         'HOST': 'localhost',
         'PORT': '5433',
+        #'PORT': '5432',
     }
 }
 '''
@@ -98,6 +104,23 @@ DATABASES = {
     }
 }
 '''
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",  # Asegúrate de incluir PATCH
+    "DELETE",
+    "OPTIONS",
+]
+
+CORS_ALLOW_HEADERS = [
+    "Authorization",
+    "Content-Type",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+    "Access-Control-Request-Method",
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -129,6 +152,7 @@ USE_I18N = True
 
 USE_TZ = True
 
+import os
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -139,3 +163,11 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Otras configuraciones de archivos estáticos
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # para archivos estáticos adicionales
+]
