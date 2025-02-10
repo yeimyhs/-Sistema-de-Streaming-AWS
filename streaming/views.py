@@ -1,365 +1,148 @@
-from django.shortcuts import get_object_or_404
-from rest_framework.viewsets import ViewSet
-from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 from streaming.serializers import CarruselSerializer, ComentarioSerializer, ConfiguracionSerializer, EventoSerializer, GallosSerializer, StreamingSerializer, UsuarioSerializer, ParticipacionGalllosSerializer, RegistroEventoSerializer
-from streaming.models import Carrusel, Comentario, Configuracion, Evento, Gallos, Streaming, Usuario, ParticipacionGalllos, RegistroEvento
+from streaming.models import Carrusel, Comentario, Configuracion, Evento, Gallos, Streaming, ParticipacionGalllos, RegistroEvento
+from streaming.serializers import *
+from streaming.models import *
 
 
-class CarruselViewSet(ViewSet):
+from .models import CustomUser
 
-    def list(self, request):
-        queryset = Carrusel.objects.order_by('pk')
-        serializer = CarruselSerializer(queryset, many=True)
-        return Response(serializer.data)
+from rest_framework import generics
+from rest_framework.response import Response
+from knox.models import AuthToken
 
-    def create(self, request):
-        serializer = CarruselSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+from knox.views import LoginView as KnoxLoginView
+from rest_framework import status
+from django.contrib.auth import login
+from rest_framework import status, permissions
+from django.http import JsonResponse
 
-    def retrieve(self, request, pk=None):
-        queryset = Carrusel.objects.all()
-        item = get_object_or_404(queryset, pk=pk)
-        serializer = CarruselSerializer(item)
-        return Response(serializer.data)
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 
-    def update(self, request, pk=None):
-        try:
-            item = Carrusel.objects.get(pk=pk)
-        except Carrusel.DoesNotExist:
-            return Response(status=404)
-        serializer = CarruselSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+class RegisterAPI(generics.GenericAPIView):
+    serializer_class = RegisterSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
 
-    def destroy(self, request, pk=None):
-        try:
-            item = Carrusel.objects.get(pk=pk)
-        except Carrusel.DoesNotExist:
-            return Response(status=404)
-        item.delete()
-        return Response(status=204)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        return Response({
+            "user": serializer.data,
+            
+            "token": AuthToken.objects.create(user)[1]
+        })
+        
 
 
-class ComentarioViewSet(ViewSet):
+@method_decorator(csrf_exempt, name="dispatch")
+class LoginView(KnoxLoginView):
+    permission_classes = (permissions.AllowAny,)
 
-    def list(self, request):
-        queryset = Comentario.objects.order_by('pk')
-        serializer = ComentarioSerializer(queryset, many=True)
-        return Response(serializer.data)
+    def post(self, request, format=None):
+        # Inicializar el serializer con los datos enviados
+        serializer = CustomAuthTokenSerializer(data=request.data)
 
-    def create(self, request):
-        serializer = ComentarioSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+        # Intentar validar el serializer
+        if not serializer.is_valid():
+            # Construir una respuesta de error uniforme en JSON
+            errors = serializer.errors
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": {
+                        "code": "invalid_data",
+                        "message": "Se encontraron errores en los datos enviados.",
+                        "details": errors,  # Esto incluye los errores del serializer
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-    def retrieve(self, request, pk=None):
-        queryset = Comentario.objects.all()
-        item = get_object_or_404(queryset, pk=pk)
-        serializer = ComentarioSerializer(item)
-        return Response(serializer.data)
+        # Recuperar el usuario autenticado desde el serializer
+        user = serializer.validated_data["user"]
 
-    def update(self, request, pk=None):
-        try:
-            item = Comentario.objects.get(pk=pk)
-        except Comentario.DoesNotExist:
-            return Response(status=404)
-        serializer = ComentarioSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+        # Iniciar sesión
+        login(request, user)
 
-    def destroy(self, request, pk=None):
-        try:
-            item = Comentario.objects.get(pk=pk)
-        except Comentario.DoesNotExist:
-            return Response(status=404)
-        item.delete()
-        return Response(status=204)
+        # Obtener la respuesta estándar de Knox
+        response = super(LoginView, self).post(request, format=None)
+        expiry = response.data.get("expiry")
+        # Serializar la información del usuario
+        user_serializer = CustomUserSerializer(user)
 
-
-class ConfiguracionViewSet(ViewSet):
-
-    def list(self, request):
-        queryset = Configuracion.objects.order_by('pk')
-        serializer = ConfiguracionSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def create(self, request):
-        serializer = ConfiguracionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-    def retrieve(self, request, pk=None):
-        queryset = Configuracion.objects.all()
-        item = get_object_or_404(queryset, pk=pk)
-        serializer = ConfiguracionSerializer(item)
-        return Response(serializer.data)
-
-    def update(self, request, pk=None):
-        try:
-            item = Configuracion.objects.get(pk=pk)
-        except Configuracion.DoesNotExist:
-            return Response(status=404)
-        serializer = ConfiguracionSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    def destroy(self, request, pk=None):
-        try:
-            item = Configuracion.objects.get(pk=pk)
-        except Configuracion.DoesNotExist:
-            return Response(status=404)
-        item.delete()
-        return Response(status=204)
+        # Responder con un JSON que combine el token y la información del usuario
+        return JsonResponse(
+            {   
+                "success": True,
+                "expiry": expiry,
+                "token": response.data["token"],
+                "user": user_serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+        
+        
+        
+class CarruselViewSet(ModelViewSet):
+    queryset = Carrusel.objects.order_by('pk')
+    serializer_class = CarruselSerializer
 
 
-class EventoViewSet(ViewSet):
-
-    def list(self, request):
-        queryset = Evento.objects.order_by('pk')
-        serializer = EventoSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def create(self, request):
-        serializer = EventoSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-    def retrieve(self, request, pk=None):
-        queryset = Evento.objects.all()
-        item = get_object_or_404(queryset, pk=pk)
-        serializer = EventoSerializer(item)
-        return Response(serializer.data)
-
-    def update(self, request, pk=None):
-        try:
-            item = Evento.objects.get(pk=pk)
-        except Evento.DoesNotExist:
-            return Response(status=404)
-        serializer = EventoSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    def destroy(self, request, pk=None):
-        try:
-            item = Evento.objects.get(pk=pk)
-        except Evento.DoesNotExist:
-            return Response(status=404)
-        item.delete()
-        return Response(status=204)
+class ComentarioViewSet(ModelViewSet):
+    queryset = Comentario.objects.order_by('pk')
+    serializer_class = ComentarioSerializer
 
 
-class GallosViewSet(ViewSet):
-
-    def list(self, request):
-        queryset = Gallos.objects.order_by('pk')
-        serializer = GallosSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def create(self, request):
-        serializer = GallosSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-    def retrieve(self, request, pk=None):
-        queryset = Gallos.objects.all()
-        item = get_object_or_404(queryset, pk=pk)
-        serializer = GallosSerializer(item)
-        return Response(serializer.data)
-
-    def update(self, request, pk=None):
-        try:
-            item = Gallos.objects.get(pk=pk)
-        except Gallos.DoesNotExist:
-            return Response(status=404)
-        serializer = GallosSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    def destroy(self, request, pk=None):
-        try:
-            item = Gallos.objects.get(pk=pk)
-        except Gallos.DoesNotExist:
-            return Response(status=404)
-        item.delete()
-        return Response(status=204)
+class ConfiguracionViewSet(ModelViewSet):
+    queryset = Configuracion.objects.order_by('pk')
+    serializer_class = ConfiguracionSerializer
 
 
-class StreamingViewSet(ViewSet):
-
-    def list(self, request):
-        queryset = Streaming.objects.order_by('pk')
-        serializer = StreamingSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def create(self, request):
-        serializer = StreamingSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-    def retrieve(self, request, pk=None):
-        queryset = Streaming.objects.all()
-        item = get_object_or_404(queryset, pk=pk)
-        serializer = StreamingSerializer(item)
-        return Response(serializer.data)
-
-    def update(self, request, pk=None):
-        try:
-            item = Streaming.objects.get(pk=pk)
-        except Streaming.DoesNotExist:
-            return Response(status=404)
-        serializer = StreamingSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    def destroy(self, request, pk=None):
-        try:
-            item = Streaming.objects.get(pk=pk)
-        except Streaming.DoesNotExist:
-            return Response(status=404)
-        item.delete()
-        return Response(status=204)
+class EventoViewSet(ModelViewSet):
+    queryset = Evento.objects.order_by('pk')
+    serializer_class = EventoSerializer
 
 
-class UsuarioViewSet(ViewSet):
-
-    def list(self, request):
-        queryset = Usuario.objects.order_by('pk')
-        serializer = UsuarioSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def create(self, request):
-        serializer = UsuarioSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-    def retrieve(self, request, pk=None):
-        queryset = Usuario.objects.all()
-        item = get_object_or_404(queryset, pk=pk)
-        serializer = UsuarioSerializer(item)
-        return Response(serializer.data)
-
-    def update(self, request, pk=None):
-        try:
-            item = Usuario.objects.get(pk=pk)
-        except Usuario.DoesNotExist:
-            return Response(status=404)
-        serializer = UsuarioSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    def destroy(self, request, pk=None):
-        try:
-            item = Usuario.objects.get(pk=pk)
-        except Usuario.DoesNotExist:
-            return Response(status=404)
-        item.delete()
-        return Response(status=204)
+class GallosViewSet(ModelViewSet):
+    queryset = Gallos.objects.order_by('pk')
+    serializer_class = GallosSerializer
 
 
-class ParticipacionGalllosViewSet(ViewSet):
-
-    def list(self, request):
-        queryset = ParticipacionGalllos.objects.order_by('pk')
-        serializer = ParticipacionGalllosSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def create(self, request):
-        serializer = ParticipacionGalllosSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-    def retrieve(self, request, pk=None):
-        queryset = ParticipacionGalllos.objects.all()
-        item = get_object_or_404(queryset, pk=pk)
-        serializer = ParticipacionGalllosSerializer(item)
-        return Response(serializer.data)
-
-    def update(self, request, pk=None):
-        try:
-            item = ParticipacionGalllos.objects.get(pk=pk)
-        except ParticipacionGalllos.DoesNotExist:
-            return Response(status=404)
-        serializer = ParticipacionGalllosSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    def destroy(self, request, pk=None):
-        try:
-            item = ParticipacionGalllos.objects.get(pk=pk)
-        except ParticipacionGalllos.DoesNotExist:
-            return Response(status=404)
-        item.delete()
-        return Response(status=204)
+class StreamingViewSet(ModelViewSet):
+    queryset = Streaming.objects.order_by('pk')
+    serializer_class = StreamingSerializer
 
 
-class RegistroEventoViewSet(ViewSet):
+class UsuarioViewSet(ModelViewSet):
+    queryset = CustomUser.objects.order_by('pk')
+    serializer_class = UsuarioSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    filterset_fields = [    'id', 'nombres', 'apellidos', 'telefono', 'activo', 'pais', 'ciudad', 'email', 'email_verified_at']
+    
+    search_fields = [
+        'nombres', 'apellidos', 'telefono', 'pais', 'ciudad', 'email'
+    ]
 
-    def list(self, request):
-        queryset = RegistroEvento.objects.order_by('pk')
-        serializer = RegistroEventoSerializer(queryset, many=True)
-        return Response(serializer.data)
 
-    def create(self, request):
-        serializer = RegistroEventoSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+class ParticipacionGalllosViewSet(ModelViewSet):
+    queryset = ParticipacionGalllos.objects.order_by('pk')
+    serializer_class = ParticipacionGalllosSerializer
 
-    def retrieve(self, request, pk=None):
-        queryset = RegistroEvento.objects.all()
-        item = get_object_or_404(queryset, pk=pk)
-        serializer = RegistroEventoSerializer(item)
-        return Response(serializer.data)
 
-    def update(self, request, pk=None):
-        try:
-            item = RegistroEvento.objects.get(pk=pk)
-        except RegistroEvento.DoesNotExist:
-            return Response(status=404)
-        serializer = RegistroEventoSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+class RegistroEventoViewSet(ModelViewSet):
+    queryset = RegistroEvento.objects.order_by('pk')
+    serializer_class = RegistroEventoSerializer
 
-    def destroy(self, request, pk=None):
-        try:
-            item = RegistroEvento.objects.get(pk=pk)
-        except RegistroEvento.DoesNotExist:
-            return Response(status=404)
-        item.delete()
-        return Response(status=204)
+
+class EstadoViewSet(ModelViewSet):
+    queryset = Estado.objects.order_by('pk')
+    serializer_class = EstadoSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    filterset_fields = ['valor', 'clave', 'descripcion', 'identificador_tabla', 'nombre_tabla']
+    search_fields = ['valor', 'clave', 'descripcion', 'identificador_tabla', 'nombre_tabla']

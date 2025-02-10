@@ -8,6 +8,102 @@
 from django.db import models
 
 
+
+
+from django.core.exceptions import ValidationError
+from django.conf import settings
+
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+
+
+
+class Estado(models.Model):
+    nombre_tabla = models.CharField(max_length=255, help_text="Nombre de la tabla a la que pertenece este estado")
+    identificador_tabla = models.CharField(max_length=255, help_text="Identificador único del registro dentro de la tabla")
+    descripcion = models.CharField(max_length=255)
+    clave = models.CharField(max_length=255, help_text="Clave del estado")
+    valor = models.CharField(help_text="Valor del estado")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('nombre_tabla', 'identificador_tabla', 'clave')
+        indexes = [
+            models.Index(fields=['nombre_tabla', 'identificador_tabla']),
+        ]
+
+    def __str__(self):
+        return f"{self.nombre_tabla} ({self.identificador_tabla}): {self.clave} = {self.valor}"
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("El email es obligatorio")
+        
+        email = self.normalize_email(email)
+        # Verifica que el campo nombreusuario esté presente
+        #if not nombreusuario:
+        #    raise ValueError('El campo nombreusuario debe ser declarado')
+        
+        # Crea el usuario con el nombre de usuario y otros campos extra
+        user = self.model( email = email, **extra_fields)
+        
+        # Establece la contraseña
+        if password:
+            user.set_password(password)
+        
+        # Guarda el usuario en la base de datos
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        # Establece is_staff y is_superuser para el superusuario
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('nombres', "superuser")
+
+        # Llama a create_user para crear el superusuario
+        return self.create_user( email, password, **extra_fields)
+
+class CustomUser(AbstractUser):
+    # Eliminar el campo `username` heredado
+    username = None
+    
+    # Campos adicionales
+    nombres = models.CharField(max_length=128)
+    fechacreacion = models.DateTimeField(auto_now_add=True)
+    apellidos = models.CharField(max_length=128, blank=True, null=True)
+    telefono = models.CharField(max_length=20, blank=True, null=True)
+    fotoperfil = models.ImageField(upload_to='perfilUsuarioimagen/', blank=True, null=True)
+    activo = models.BooleanField(default =1)
+    
+    pais = models.CharField(max_length=128, blank=True, null=True)
+    ciudad = models.CharField(max_length=128, blank=True, null=True)
+    
+    email = models.EmailField(unique=True) 
+    email_verified_at = models.DateTimeField(blank=True, null=True)
+    remember_token = models.CharField(max_length=100, blank=True, null=True)
+
+    # Especificar que el campo para autenticar es `nombreusuario`
+    USERNAME_FIELD = 'email'
+    
+    # Campos requeridos adicionales (no necesitas username ya que lo has reemplazado con nombreusuario)
+    REQUIRED_FIELDS = ['nombres']  # En Django, `email` es un campo por defecto si lo estás usando como required
+
+    # Manager personalizado
+    objects = CustomUserManager()
+    
+    def __str__(self):
+        return self.nombres
+    def get_full_name(self):
+        return f"{self.nombres} {self.apellidos or ''}".strip()
+
+
+
+#-------------------------------------------------------------------------------------------------------------user
+
+
+
 class Carrusel(models.Model):
     activo = models.SmallIntegerField(default = 1)
     titulo = models.CharField(max_length=128)
@@ -24,7 +120,7 @@ class Carrusel(models.Model):
 
 class Comentario(models.Model):
     activo = models.SmallIntegerField(default = 1)
-    idusuario = models.ForeignKey('Usuario', models.DO_NOTHING, db_column='idusuario')
+    idusuario = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='idusuario')
     comentario = models.TextField()
     idcomentario = models.BigIntegerField(primary_key=True)
     estado = models.IntegerField()
@@ -90,17 +186,6 @@ class Streaming(models.Model):
         db_table = 'Streaming'
 
 
-class Usuario(models.Model):
-    activo = models.SmallIntegerField(default = 1)
-    idusuario = models.BigIntegerField(primary_key=True)
-    nombre = models.CharField(max_length=128)
-    apellido = models.CharField(max_length=128)
-    email = models.CharField(max_length=128)
-    telefono = models.CharField(max_length=128, blank=True, null=True)
-
-    class Meta:
-        db_table = 'Usuario'
-
 
 class ParticipacionGalllos(models.Model):
     activo = models.SmallIntegerField(default = 1)
@@ -117,7 +202,7 @@ class RegistroEvento(models.Model):
     voucher = models.BinaryField()
     estado = models.IntegerField()
     idevento = models.OneToOneField(Evento, models.DO_NOTHING, db_column='idevento', primary_key=True)
-    idusuario = models.ForeignKey(Usuario, models.DO_NOTHING, db_column='idusuario')
+    idusuario = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='idusuario')
 
     class Meta:
         db_table = 'registro_evento'

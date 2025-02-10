@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-n@=#5t)qy#(fnr)@v3$$dg7h(!yrs303$=t*lgp*g_&^w(b-lr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['18.220.9.56']
+ALLOWED_HOSTS = ['127.0.0.1','18.220.9.56']
 
 
 # Application definition
@@ -42,14 +42,16 @@ INSTALLED_APPS = [
     'knox',
     'drf_yasg',
     'corsheaders',
+    'django_filters',
     
     'streaming',
 ]
+AUTH_USER_MODEL = 'streaming.CustomUser'
 
 CORS_ALLOW_ALL_ORIGINS = True
 MIDDLEWARE = [
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     'corsheaders.middleware.CorsMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -90,12 +92,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'streaming',
-        'USER': 'postgres',
-        #'USER':'streaminguser',
+        #'USER': 'postgres',
+        'USER':'streaminguser',
         'PASSWORD': 'yeimyhs',
         'HOST': 'localhost',
-        'PORT': '5433',
-        #'PORT': '5432',
+        #'PORT': '5433'
+        'PORT': '5432'
     }
 }
 '''
@@ -106,6 +108,22 @@ DATABASES = {
     }
 }
 '''
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+                                       'knox.auth.TokenAuthentication',),
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'NON_ FIELD_ERRORS _KEY': 'error',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    
+}
+DATETIME_FORMAT = 'Y-m-d H:i:s' 
+
 CORS_ALLOW_METHODS = [
     "GET",
     "POST",
