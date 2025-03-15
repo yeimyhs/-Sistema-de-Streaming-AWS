@@ -176,6 +176,7 @@ class EventoSerializer(ModelSerializer):
 
 
 class GallosSerializer(ModelSerializer):
+    idduenio = DuenioSerializer(read_only=True) 
 
     class Meta:
         model = Gallos
@@ -183,7 +184,6 @@ class GallosSerializer(ModelSerializer):
 
 
 class StreamingSerializer(ModelSerializer):
-
     class Meta:
         model = Streaming
         fields = '__all__'

@@ -1,7 +1,7 @@
 # This is an auto-generated Django model module.
 # You'll have to do the following manually to clean this up:
 #   * Rearrange models' order
-#   * Make sure each model has one field with primary_key=True
+#   * Make sure each model has one field BigAutoField primary_key=True
 #   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
 #   * Remov` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
@@ -100,7 +100,7 @@ class CustomUser(AbstractUser):
 
 
 class Duenio(models.Model):
-    idduenio = models.BigIntegerField(primary_key=True)
+    idduenio = models.BigAutoField(primary_key=True)
     eliminado = models.SmallIntegerField(default = 0)
     # Campos adicionales
     nombres = models.CharField(max_length=128)
@@ -110,7 +110,6 @@ class Duenio(models.Model):
     email = models.EmailField(unique=True) 
     
     fechacreacion = models.DateTimeField(auto_now_add=True)
-    fechapublicacion = models.DateField()
     estado = models.IntegerField()
 
     class Meta:
@@ -130,7 +129,7 @@ class Carrusel(models.Model):
 
     fechapublicacion = models.DateField()
     estado = models.IntegerField()
-    idcarrusel = models.BigIntegerField(primary_key=True)
+    idcarrusel = models.BigAutoField(primary_key=True)
 
     class Meta:
         db_table = 'Carrusel'
@@ -140,7 +139,7 @@ class Comentario(models.Model):
     eliminado = models.SmallIntegerField(default = 0)
     idusuario = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='idusuario')
     comentario = models.TextField()
-    idcomentario = models.BigIntegerField(primary_key=True)
+    idcomentario = models.BigAutoField(primary_key=True)
     estado = models.IntegerField()
     fechacreacion = models.DateTimeField(auto_now_add=True)
 
@@ -152,7 +151,7 @@ class Comentario(models.Model):
 
 class Configuracion(models.Model):
     eliminado = models.SmallIntegerField(default = 0)
-    idconf = models.BigIntegerField(primary_key=True)
+    idconf = models.BigAutoField(primary_key=True)
     nombreweb = models.CharField(max_length=128)
     correo = models.CharField(max_length=128)
     telefono = models.CharField(max_length=128, blank=True, null=True)
@@ -168,7 +167,7 @@ class Configuracion(models.Model):
 
 class Evento(models.Model):
     eliminado = models.SmallIntegerField(default = 0)
-    idevento = models.BigIntegerField(primary_key=True)
+    idevento = models.BigAutoField(primary_key=True)
     titulo = models.CharField(max_length=128)
     descripcion = models.TextField()
     fechaevento = models.DateField()
@@ -183,14 +182,15 @@ class Evento(models.Model):
 
 class Gallos(models.Model):
     eliminado = models.SmallIntegerField(default = 0)
-    nombre = models.BigIntegerField()
-    duenio = models.BigIntegerField()
-    peso = models.BigIntegerField(blank=True, null=True)
-    color = models.BigIntegerField(blank=True, null=True)
-    descripcion = models.BigIntegerField()
-    experiencia = models.BigIntegerField(blank=True, null=True)
+    nombre = models.CharField(max_length=128)
+    peso = models.FloatField(blank=True, null=True)
+    color = models.CharField(max_length=128,blank=True, null=True)
+    descripcion = models.TextField()
+    experiencia = models.SmallIntegerField(default = 0)
     fechacreacion = models.DateTimeField(auto_now_add=True)
-    idgallo = models.BigIntegerField(primary_key=True)
+    idgallo = models.BigAutoField(primary_key=True)
+    idduenio = models.ForeignKey(Duenio, models.DO_NOTHING, db_column='idduenio')
+    
 
     class Meta:
         db_table = 'Gallos'
@@ -201,7 +201,7 @@ class Streaming(models.Model):
     idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento', blank=True, null=True)
     urlstreaming = models.TextField()
     nombrevideolife = models.TextField()
-    idstreaming = models.BigIntegerField(primary_key=True)
+    idstreaming = models.BigAutoField(primary_key=True)
 
     class Meta:
         db_table = 'Streaming'
