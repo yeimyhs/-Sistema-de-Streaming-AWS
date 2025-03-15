@@ -146,3 +146,11 @@ class EstadoViewSet(ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     filterset_fields = ['valor', 'clave', 'descripcion', 'identificador_tabla', 'nombre_tabla']
     search_fields = ['valor', 'clave', 'descripcion', 'identificador_tabla', 'nombre_tabla']
+    
+    
+    
+    
+from django.shortcuts import render
+
+def chat_view(request):
+    return render(request, "chat.html")

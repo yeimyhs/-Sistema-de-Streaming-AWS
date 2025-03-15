@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+</head>
+<body>
+    <h2>Prueba de WebSocket en Django</h2>
+    <button onclick="sendMessage()">Enviar Mensaje</button>
+    <p id="status">Estado: Desconectado</p>
+    <p id="messages"></p>
+
+    <script>
+        const socket = new WebSocket("ws://localhost:8000/ws/chat/");
+
+        socket.onopen = function() {
+            document.getElementById("status").innerText = "Estado: Conectado ✅";
+            console.log("Conectado al WebSocket");
+        };
+
+        socket.onmessage = function(event) {
+            console.log("Mensaje recibido:", event.data);
+            document.getElementById("messages").innerHTML += `<p>Servidor: ${event.data}</p>`;
+        };
+
+        socket.onclose = function() {
+            document.getElementById("status").innerText = "Estado: Desconectado ❌";
+            console.log("Conexión cerrada");
+        };
+
+        function sendMessage() {
+            const message = "Hola, servidor!";
+            socket.send(JSON.stringify({ message: message }));
+            document.getElementById("messages").innerHTML += `<p>Cliente: ${message}</p>`;
+        }
+    </script>
+</body>
+</html>

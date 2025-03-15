@@ -15,6 +15,9 @@ urlpatterns = [
     path('logout/', knox_views.LogoutView.as_view(), name='knox_logout'),
     path('logoutall/', knox_views.LogoutAllView.as_view(), name='knox_logoutall'),
     
+    
+    path("chat/", views.chat_view, name="chat"),
+    
 ]
 router.register(r'carrusel', views.CarruselViewSet, 'Carrusel')
 router.register(r'comentario', views.ComentarioViewSet, 'Comentario')
