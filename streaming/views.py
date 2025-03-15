@@ -87,6 +87,9 @@ class LoginView(KnoxLoginView):
         )
         
         
+class DuenioViewSet(ModelViewSet):
+    queryset = Duenio.objects.order_by('pk')
+    serializer_class = DuenioSerializer
         
         
 class CarruselViewSet(ModelViewSet):

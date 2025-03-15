@@ -19,6 +19,7 @@ urlpatterns = [
     path("chat/", views.chat_view, name="chat"),
     
 ]
+router.register(r'duenio', views.DuenioViewSet, 'Duenio')
 router.register(r'carrusel', views.CarruselViewSet, 'Carrusel')
 router.register(r'comentario', views.ComentarioViewSet, 'Comentario')
 router.register(r'configuracion', views.ConfiguracionViewSet, 'Configuracion')

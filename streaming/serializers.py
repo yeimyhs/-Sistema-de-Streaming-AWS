@@ -140,6 +140,11 @@ class CustomAuthTokenSerializer(serializers.Serializer):
         return attrs
     
     
+class DuenioSerializer(ModelSerializer):
+
+    class Meta:
+        model = Duenio
+        fields = '__all__'
     
     
 class CarruselSerializer(ModelSerializer):
@@ -147,8 +152,8 @@ class CarruselSerializer(ModelSerializer):
     class Meta:
         model = Carrusel
         fields = '__all__'
-
-
+        
+        
 class ComentarioSerializer(ModelSerializer):
 
     class Meta:
