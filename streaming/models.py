@@ -114,7 +114,7 @@ class Duenio(models.Model):
     estado = models.IntegerField()
 
     class Meta:
-        db_table = 'Carrusel'
+        db_table = 'Duenio'
         
 
 #-------------------------------------------------------------------------------------------------------------user
