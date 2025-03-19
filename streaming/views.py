@@ -1,6 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
-from streaming.serializers import CarruselSerializer, ComentarioSerializer, ConfiguracionSerializer, EventoSerializer, GallosSerializer, StreamingSerializer, UsuarioSerializer, ParticipacionGalllosSerializer, RegistroEventoSerializer
-from streaming.models import Carrusel, Comentario, Configuracion, Evento, Gallos, Streaming, ParticipacionGalllos, RegistroEvento
+from streaming.serializers import CarruselSerializer, ComentarioSerializer, ConfiguracionSerializer, EventoSerializer, GallosSerializer, StreamingSerializer, UsuarioSerializer
+from streaming.models import Carrusel, Comentario, Configuracion, Evento, Gallos, Streaming
 from streaming.serializers import *
 from streaming.models import *
 
@@ -92,6 +92,14 @@ class DuenioViewSet(ModelViewSet):
     serializer_class = DuenioSerializer
         
         
+class GalponViewSet(ModelViewSet):
+    queryset = Galpon.objects.order_by('pk')
+    serializer_class = GalponSerializer
+    
+class FiestaViewSet(ModelViewSet):
+    queryset = Fiesta.objects.order_by('pk')
+    serializer_class = FiestaSerializer
+    
 class CarruselViewSet(ModelViewSet):
     queryset = Carrusel.objects.order_by('pk')
     serializer_class = CarruselSerializer
@@ -133,14 +141,14 @@ class UsuarioViewSet(ModelViewSet):
     ]
 
 
-class ParticipacionGalllosViewSet(ModelViewSet):
-    queryset = ParticipacionGalllos.objects.order_by('pk')
-    serializer_class = ParticipacionGalllosSerializer
+class ParticipacionGallosViewSet(ModelViewSet):
+    queryset = ParticipacionGallos.objects.order_by('pk')
+    serializer_class = ParticipacionGallosSerializer
 
 
-class RegistroEventoViewSet(ModelViewSet):
-    queryset = RegistroEvento.objects.order_by('pk')
-    serializer_class = RegistroEventoSerializer
+class RegistroFiestaViewSet(ModelViewSet):
+    queryset = RegistroFiesta.objects.order_by('pk')
+    serializer_class = RegistroFiestaSerializer
 
 
 class EstadoViewSet(ModelViewSet):
@@ -151,7 +159,20 @@ class EstadoViewSet(ModelViewSet):
     search_fields = ['valor', 'clave', 'descripcion', 'identificador_tabla', 'nombre_tabla']
     
     
-    
+class RegistroFiestaViewSet(ModelViewSet):
+    queryset = RegistroFiesta.objects.order_by('pk')
+    serializer_class = RegistroFiestaSerializer
+
+
+class GalponGallosViewSet(ModelViewSet):
+    queryset = GalponGallos.objects.order_by('pk')
+    serializer_class = GalponGallosSerializer
+
+class GalponFiestaViewSet(ModelViewSet):
+    queryset = GalponFiesta.objects.order_by('pk')
+    serializer_class = GalponFiestaSerializer
+
+
     
 from django.shortcuts import render
 

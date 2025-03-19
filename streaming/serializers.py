@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from streaming.models import Carrusel, Comentario, Configuracion, Evento, Gallos, Streaming, ParticipacionGalllos, RegistroEvento
+from streaming.models import Carrusel, Comentario, Configuracion, Evento, Gallos, Streaming
 
 from .models import *
 
@@ -140,11 +140,27 @@ class CustomAuthTokenSerializer(serializers.Serializer):
         return attrs
     
     
+
+    
+class GalponFiestaSerializer(ModelSerializer):
+
+    class Meta:
+        model = GalponFiesta
+        fields = '__all__'
+
+class GalponGallosSerializer(ModelSerializer):
+
+    class Meta:
+        model = GalponGallos
+        fields = '__all__'
+        
 class DuenioSerializer(ModelSerializer):
 
     class Meta:
         model = Duenio
         fields = '__all__'
+   
+   
     
     
 class CarruselSerializer(ModelSerializer):
@@ -169,20 +185,65 @@ class ConfiguracionSerializer(ModelSerializer):
 
 
 class EventoSerializer(ModelSerializer):
+    gallosvs = serializers.SerializerMethodField()
 
     class Meta:
         model = Evento
         fields = '__all__'
+    def get_gallosvs(self, obj):
+        return GallosSerializer(Gallos.objects.filter(idgallo__in=obj.evento_gallos_vs.values_list('idgallo', flat=True)), many=True).data
 
 
+class OnlyGalponSerializer(ModelSerializer):
+    iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True) 
+    class Meta:
+        model = Galpon
+        fields = '__all__'
+
+        
+        
 class GallosSerializer(ModelSerializer):
-    idduenio = DuenioSerializer(read_only=True) 
-
+    galpondetalle = serializers.SerializerMethodField()
+    
     class Meta:
         model = Gallos
         fields = '__all__'
+        
+    def get_galpondetalle(self, obj):
+        return OnlyGalponSerializer(Galpon.objects.filter(idgalpon__in=obj.gallo_galpondetalle.values_list('idgalpon', flat=True)), many=True).data
 
 
+class GalponSerializer(ModelSerializer):
+    iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True) 
+    #gallos = GallosSerializer(many=True, read_only=True, source='galpon_gallos.all')
+    gallos = serializers.SerializerMethodField()
+    class Meta:
+        model = Galpon
+        fields = '__all__'
+    def get_gallos(self, obj):
+        return GallosSerializer(Gallos.objects.filter(idgallo__in=obj.galpon_gallos.values_list('idgallo', flat=True)), many=True).data
+
+        #return GallosSerializer(obj.galpon_gallos.values_list('idgallo', flat=True), many=True).data
+    #def __init__(self, *args, **kwargs):
+    #    super().__init__(*args, **kwargs)
+    #    self.fields['gallos'] = GallosSerializer(many=True, read_only=True, source='galpon_gallos.all')
+
+
+        
+class FiestaSerializer(ModelSerializer):
+    class Meta:
+        model = Fiesta
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['eventos'] = EventoSerializer(many=True, read_only=True) 
+
+class OnlyFiestaSerializer(ModelSerializer):
+    class Meta:
+        model = Fiesta
+        fields = '__all__'
+        
 class StreamingSerializer(ModelSerializer):
     class Meta:
         model = Streaming
@@ -196,17 +257,18 @@ class UsuarioSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class ParticipacionGalllosSerializer(ModelSerializer):
+class ParticipacionGallosSerializer(ModelSerializer):
 
     class Meta:
-        model = ParticipacionGalllos
+        model = ParticipacionGallos
         fields = '__all__'
 
 
-class RegistroEventoSerializer(ModelSerializer):
+class RegistroFiestaSerializer(ModelSerializer):
+    fiestadetalle = OnlyFiestaSerializer(source='idfiesta', read_only=True) 
 
     class Meta:
-        model = RegistroEvento
+        model = RegistroFiesta
         fields = '__all__'
 
 class EstadoSerializer(ModelSerializer):

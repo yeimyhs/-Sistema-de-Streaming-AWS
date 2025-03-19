@@ -27,9 +27,13 @@ router.register(r'evento', views.EventoViewSet, 'Evento')
 router.register(r'gallos', views.GallosViewSet, 'Gallos')
 router.register(r'streaming', views.StreamingViewSet, 'Streaming')
 router.register(r'usuario', views.UsuarioViewSet, 'Usuario')
-router.register(r'participaciongalllos', views.ParticipacionGalllosViewSet, 'ParticipacionGalllos')
-router.register(r'registroevento', views.RegistroEventoViewSet, 'RegistroEvento')
+router.register(r'participaciongallos', views.ParticipacionGallosViewSet, 'ParticipacionGallos')
+router.register(r'registrofiesta', views.RegistroFiestaViewSet, 'RegistroFiesta')
 router.register(r'estado', views.EstadoViewSet, 'Estado')
+router.register(r'galpon', views.GalponViewSet, 'Galpon')
+router.register(r'fiesta', views.FiestaViewSet, 'Fiesta')
+router.register(r'galponfiesta', views.GalponFiestaViewSet, 'GalponFiesta')
+router.register(r'galpongallos', views.GalponGallosViewSet, 'GalponGallos')
 
 urlpatterns = urlpatterns +  router.urls
 

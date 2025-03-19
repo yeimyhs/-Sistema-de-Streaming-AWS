@@ -98,6 +98,7 @@ class CustomUser(AbstractUser):
     def get_full_name(self):
         return f"{self.nombres} {self.apellidos or ''}".strip()
 
+#-------------------------------------------------------------------------------------------------------------user
 
 class Duenio(models.Model):
     idduenio = models.BigAutoField(primary_key=True)
@@ -114,6 +115,37 @@ class Duenio(models.Model):
 
     class Meta:
         db_table = 'Duenio'
+        
+        
+        
+class Fiesta(models.Model):
+    eliminado = models.SmallIntegerField(default = 0)
+    idfiesta = models.BigAutoField(primary_key=True)
+    titulo = models.CharField(max_length=128)
+    descripcion = models.TextField()
+    fechainicio = models.DateField()
+    fechafin = models.DateField()
+    fechacreacion = models.DateTimeField(auto_now_add=True)
+
+    estado = models.IntegerField()
+ 
+
+    class Meta:
+        db_table = 'Fiesta'
+        
+class Galpon(models.Model):
+    idgalpon = models.BigAutoField(primary_key=True)
+    idduenio = models.ForeignKey(Duenio, models.DO_NOTHING, db_column='idduenio')
+    eliminado = models.SmallIntegerField(default = 0)
+    # Campos adicionales
+    titulo = models.CharField(max_length=128)
+    descripcion = models.TextField()
+    
+    fechacreacion = models.DateTimeField(auto_now_add=True)
+    estado = models.IntegerField()
+
+    class Meta:
+        db_table = 'Galpon'
         
 
 #-------------------------------------------------------------------------------------------------------------user
@@ -172,6 +204,8 @@ class Evento(models.Model):
     descripcion = models.TextField()
     fechaevento = models.DateField()
     fechacreacion = models.DateTimeField(auto_now_add=True)
+    imagen = models.ImageField(upload_to='eventoflayer/', blank=True, null=True)
+    idfiesta = models.ForeignKey(Fiesta, models.DO_NOTHING, db_column='idfiesta', related_name="eventos")
 
     estado = models.IntegerField()
  
@@ -186,10 +220,10 @@ class Gallos(models.Model):
     peso = models.FloatField(blank=True, null=True)
     color = models.CharField(max_length=128,blank=True, null=True)
     descripcion = models.TextField()
-    experiencia = models.SmallIntegerField(default = 0)
+    experiencia = models.FloatField(default = 0)
     fechacreacion = models.DateTimeField(auto_now_add=True)
+    imagen = models.ImageField(upload_to='gallofoto/', blank=True, null=True)
     idgallo = models.BigAutoField(primary_key=True)
-    idduenio = models.ForeignKey(Duenio, models.DO_NOTHING, db_column='idduenio')
     
 
     class Meta:
@@ -208,23 +242,43 @@ class Streaming(models.Model):
 
 
 
-class ParticipacionGalllos(models.Model):
+class ParticipacionGallos(models.Model):
+    idparticipacion = models.BigAutoField(primary_key=True)
     eliminado = models.SmallIntegerField(default = 0)
-    idgallo = models.OneToOneField(Gallos, models.DO_NOTHING, db_column='idgallo', primary_key=True)
-    idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento')
+    idgallo = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo')
+    idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento', related_name='evento_gallos_vs')
 
     class Meta:
-        db_table = 'participacion_galllos'
-        unique_together = (('idgallo', 'idevento'),)
+        db_table = 'participacion_gallos'
 
 
-class RegistroEvento(models.Model):
+class RegistroFiesta(models.Model):
+    idregistro = models.BigAutoField(primary_key=True)
     eliminado = models.SmallIntegerField(default = 0)
-    voucher = models.BinaryField()
+    voucher = models.ImageField(upload_to='pagos/', blank=True, null=True)
     estado = models.IntegerField()
-    idevento = models.OneToOneField(Evento, models.DO_NOTHING, db_column='idevento', primary_key=True)
+    idfiesta = models.ForeignKey(Fiesta, models.DO_NOTHING, db_column='idfiesta')
     idusuario = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='idusuario')
 
     class Meta:
-        db_table = 'registro_evento'
-        unique_together = (('idevento', 'idusuario'),)
+        db_table = 'registro_fiesta'
+        unique_together = (('idfiesta', 'idusuario'),)
+
+
+class GalponGallos(models.Model):
+    idparticipacion = models.BigAutoField(primary_key=True)
+    eliminado = models.SmallIntegerField(default = 0)
+    idgallo = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo', related_name = 'gallo_galpondetalle')
+    idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon', related_name='galpon_gallos')
+
+    class Meta:
+        db_table = 'galpon_gallos'
+        
+class GalponFiesta(models.Model):
+    idparticipacion = models.BigAutoField(primary_key=True)
+    eliminado = models.SmallIntegerField(default = 0)
+    idfiesta = models.ForeignKey(Fiesta, models.DO_NOTHING, db_column='idfiesta')
+    idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon')
+
+    class Meta:
+        db_table = 'galpon_fiesta'
