@@ -134,7 +134,7 @@ class UsuarioViewSet(ModelViewSet):
     queryset = CustomUser.objects.order_by('pk')
     serializer_class = UsuarioSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
-    filterset_fields = [    'id', 'nombres', 'apellidos', 'telefono', 'activo', 'pais', 'ciudad', 'email', 'email_verified_at']
+    filterset_fields = [    'id', 'nombres', 'apellidos', 'telefono', 'eliminado', 'pais', 'ciudad', 'email', 'email_verified_at']
     
     search_fields = [
         'nombres', 'apellidos', 'telefono', 'pais', 'ciudad', 'email'
