@@ -90,51 +90,70 @@ class LoginView(KnoxLoginView):
 class DuenioViewSet(ModelViewSet):
     queryset = Duenio.objects.order_by('pk')
     serializer_class = DuenioSerializer
+    filterset_fields = ['nombres', 'apellidos', 'telefono', 'email', 'estado']
+    search_fields = ['nombres', 'apellidos', 'email']
         
         
 class GalponViewSet(ModelViewSet):
     queryset = Galpon.objects.order_by('pk')
     serializer_class = GalponSerializer
+    filterset_fields = ['titulo', 'idduenio', 'estado']
+    search_fields = ['titulo', 'descripcion']
     
 class FiestaViewSet(ModelViewSet):
     queryset = Fiesta.objects.order_by('pk')
     serializer_class = FiestaSerializer
+    filterset_fields = ['titulo', 'fechainicio', 'fechafin', 'estado', 'precio']
+    search_fields = ['titulo', 'descripcion']
     
 class CarruselViewSet(ModelViewSet):
     queryset = Carrusel.objects.order_by('pk')
     serializer_class = CarruselSerializer
+    filterset_fields = ['titulo', 'fechapublicacion', 'estado']
+    search_fields = ['titulo', 'descripcion']
 
 
 class ComentarioViewSet(ModelViewSet):
     queryset = Comentario.objects.order_by('pk')
     serializer_class = ComentarioSerializer
+    filterset_fields = ['idusuario', 'idstreaming', 'estado']
+    search_fields = ['comentario']
 
 
 class ConfiguracionViewSet(ModelViewSet):
     queryset = Configuracion.objects.order_by('pk')
     serializer_class = ConfiguracionSerializer
+    filterset_fields = ['nombreweb', 'correo', 'telefono', 'estadostreaming']
+    search_fields = ['nombreweb', 'correo']
 
 
 class EventoViewSet(ModelViewSet):
     queryset = Evento.objects.order_by('pk')
     serializer_class = EventoSerializer
+    filterset_fields = ['titulo', 'fechaevento', 'idfiesta', 'estado']
+    search_fields = ['titulo', 'descripcion']
 
 
 class GallosViewSet(ModelViewSet):
     queryset = Gallos.objects.order_by('pk')
     serializer_class = GallosSerializer
+    filterset_fields = ['nombre', 'peso', 'color', 'placa', 'anillo', 'experiencia']
+    search_fields = ['nombre', 'color', 'placa', 'anillo', 'descripcion']
 
 
 class StreamingViewSet(ModelViewSet):
     queryset = Streaming.objects.order_by('pk')
     serializer_class = StreamingSerializer
+    filterset_fields = ['idevento']
+    search_fields = ['nombrevideolife', 'urlstreaming']
 
 
 class UsuarioViewSet(ModelViewSet):
     queryset = CustomUser.objects.order_by('pk')
     serializer_class = UsuarioSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
-    filterset_fields = [    'id', 'nombres', 'apellidos', 'telefono', 'eliminado', 'pais', 'ciudad', 'email', 'email_verified_at']
+            
+    filterset_fields = [    'id', 'nombres', 'apellidos', 'telefono', 'eliminado', 'pais', 'ciudad', 'email', 'email_verified_at','is_staff',"estado"]
     
     search_fields = [
         'nombres', 'apellidos', 'telefono', 'pais', 'ciudad', 'email'
@@ -144,12 +163,15 @@ class UsuarioViewSet(ModelViewSet):
 class ParticipacionGallosViewSet(ModelViewSet):
     queryset = ParticipacionGallos.objects.order_by('pk')
     serializer_class = ParticipacionGallosSerializer
+    filterset_fields = ['idgallo', 'idevento']
+    search_fields = []
 
 
 class RegistroFiestaViewSet(ModelViewSet):
     queryset = RegistroFiesta.objects.order_by('pk')
     serializer_class = RegistroFiestaSerializer
-
+    filterset_fields = ['idfiesta', 'idusuario', 'estado']
+    search_fields = []
 
 class EstadoViewSet(ModelViewSet):
     queryset = Estado.objects.order_by('pk')
@@ -159,18 +181,19 @@ class EstadoViewSet(ModelViewSet):
     search_fields = ['valor', 'clave', 'descripcion', 'identificador_tabla', 'nombre_tabla']
     
     
-class RegistroFiestaViewSet(ModelViewSet):
-    queryset = RegistroFiesta.objects.order_by('pk')
-    serializer_class = RegistroFiestaSerializer
-
 
 class GalponGallosViewSet(ModelViewSet):
     queryset = GalponGallos.objects.order_by('pk')
     serializer_class = GalponGallosSerializer
+    filterset_fields = ['idgallo', 'idgalpon']
+    search_fields = []
 
 class GalponFiestaViewSet(ModelViewSet):
     queryset = GalponFiesta.objects.order_by('pk')
     serializer_class = GalponFiestaSerializer
+    filterset_fields = ['idfiesta', 'idgalpon']
+    search_fields = []
+
 
 
     

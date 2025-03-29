@@ -24,6 +24,7 @@ class CustomUserSerializer(ModelSerializer):
             "pais",
             "ciudad",
             "email",
+            "estado",
             
             'email_verified_at',
             'remember_token',
@@ -44,6 +45,7 @@ class RegisterSerializer(ModelSerializer):
             "fotoperfil",
             "eliminado",
             "pais",
+            "estado",
             "ciudad",
             "email",
         ]

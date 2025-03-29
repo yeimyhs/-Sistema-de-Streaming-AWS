@@ -59,7 +59,8 @@ class CustomUserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         # Establece is_staff y is_superuser para el superusuario
         extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('estado', 1)
+        extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('nombres', "superuser")
 
         # Llama a create_user para crear el superusuario
@@ -75,6 +76,7 @@ class CustomUser(AbstractUser):
     apellidos = models.CharField(max_length=128, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     fotoperfil = models.ImageField(upload_to='perfilUsuarioimagen/', blank=True, null=True)
+    estado = models.IntegerField()
     eliminado = models.BooleanField(default = 0)
     
     pais = models.CharField(max_length=128, blank=True, null=True)
@@ -126,6 +128,7 @@ class Fiesta(models.Model):
     fechainicio = models.DateField()
     fechafin = models.DateField()
     fechacreacion = models.DateTimeField(auto_now_add=True)
+    precio = models.FloatField()
 
     estado = models.IntegerField()
  
@@ -219,6 +222,8 @@ class Gallos(models.Model):
     nombre = models.CharField(max_length=128)
     peso = models.FloatField(blank=True, null=True)
     color = models.CharField(max_length=128,blank=True, null=True)
+    placa = models.CharField(max_length=128,blank=True, null=True)
+    anillo = models.CharField(max_length=128,blank=True, null=True)
     descripcion = models.TextField()
     experiencia = models.FloatField(default = 0)
     fechacreacion = models.DateTimeField(auto_now_add=True)
