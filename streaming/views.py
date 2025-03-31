@@ -195,9 +195,55 @@ class GalponFiestaViewSet(ModelViewSet):
     search_fields = []
 
 
-
     
 from django.shortcuts import render
 
 def chat_view(request):
     return render(request, "chat.html")
+
+
+import boto3
+from django.conf import settings
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+
+class CreateMediaLiveChannel(APIView):
+    def post(self, request):
+        client = boto3.client(
+            'medialive',
+            region_name=settings.AWS_REGION,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+        )
+
+        try:
+            response = client.create_channel(
+                Name=request.data.get("name", "DefaultChannel"),
+                RoleArn=settings.AWS_MEDIALIVE_ROLE_ARN,
+                InputAttachments=[],
+                Destinations=[],
+                EncoderSettings={},
+                Tags={'Project': 'Streaming'}
+            )
+            return Response(response, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+from django.http import JsonResponse
+from .aws_medialive import crear_canal_medialive
+import sys
+
+def generar_stream(request):
+    try:
+        resultado = crear_canal_medialive()
+        print("--------")
+        sys.stdout = open("debug.log", "a")
+        print("Este mensaje se escribirá en debug.log")
+        sys.stdout.flush()
+        return JsonResponse({"stream_url": resultado})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

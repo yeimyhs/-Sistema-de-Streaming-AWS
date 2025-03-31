@@ -31,6 +31,9 @@ ALLOWED_HOSTS = ['127.0.0.1','18.220.9.56','loaclhost', '127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',  # Asegúrate de que "daphne" está antes que 'django.contrib'
+    'channels',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -82,6 +85,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'streamingproject.wsgi.application'
+ASGI_APPLICATION = 'streamingproject.asgi.application'
 
 
 # Database
@@ -92,12 +96,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'streaming',
-        #'USER': 'postgres',
-        'USER':'streaminguser',
+        'USER': 'postgres',
+        #'USER':'streaminguser',
         'PASSWORD': 'yeimyhs',
         'HOST': 'localhost',
-        #'PORT': '5433'
-        'PORT': '5432'
+        'PORT': '5433'
+        #'PORT': '5432'
     }
 }
 '''
@@ -186,8 +190,44 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = '/media/'  # URL pública para acceder a los archivos
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Ruta donde se guardan los archivos físicamente
 
 # Otras configuraciones de archivos estáticos
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),  # para archivos estáticos adicionales
 ]
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Para pruebas locales sin Redis
+    },
+}
+
+import os  # Importa os para manejar rutas
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],  # Ruta donde están los HTML
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+
+AWS_ACCESS_KEY_ID = "AKIARSEBI4OWVYVDKWNH"
+AWS_SECRET_ACCESS_KEY = "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"
+AWS_REGION = "us-west-2"
+AWS_MEDIALIVE_ROLE_ARN = "arn:aws:iam::107645297581:role/MediaLiveRole"
+AWS_MEDIALIVE_SECURITY_GROUP = "3364156"

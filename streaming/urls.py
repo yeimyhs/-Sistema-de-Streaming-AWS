@@ -15,8 +15,10 @@ urlpatterns = [
     path('logout/', knox_views.LogoutView.as_view(), name='knox_logout'),
     path('logoutall/', knox_views.LogoutAllView.as_view(), name='knox_logoutall'),
     
-    
+    path('register/', views.RegisterAPI.as_view(), name='register'),
+    path('channel/', views.CreateMediaLiveChannel.as_view(), name='create-medialive-channel'),
     path("chat/", views.chat_view, name="chat"),
+    path("crear-stream/", views.generar_stream, name="crear-stream"),
     
 ]
 router.register(r'duenio', views.DuenioViewSet, 'Duenio')
