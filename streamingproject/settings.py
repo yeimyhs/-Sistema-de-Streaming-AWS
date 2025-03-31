@@ -97,11 +97,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'streaming',
         'USER': 'postgres',
-        #'USER':'streaminguser',
-        'PASSWORD': 'yeimyhs',
+        'USER':'streaminguser',
+        #'PASSWORD': 'yeimyhs',
         'HOST': 'localhost',
-        'PORT': '5433'
-        #'PORT': '5432'
+        #'PORT': '5433'
+        'PORT': '5432'
     }
 }
 '''
@@ -188,11 +188,11 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATIC_URL = '/static/'
+STATIC_URL = '/streaming/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-MEDIA_URL = '/media/'  # URL pública para acceder a los archivos
+MEDIA_URL = '/streaming/media/'  # URL pública para acceder a los archivos
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Ruta donde se guardan los archivos físicamente
 
 # Otras configuraciones de archivos estáticos
