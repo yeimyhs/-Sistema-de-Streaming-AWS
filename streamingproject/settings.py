@@ -96,9 +96,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'streaming',
-        'USER': 'postgres',
+        #'USER': 'postgres',
         'USER':'streaminguser',
-        #'PASSWORD': 'yeimyhs',
+        'PASSWORD': 'yeimyhs',
         'HOST': 'localhost',
         #'PORT': '5433'
         'PORT': '5432'
