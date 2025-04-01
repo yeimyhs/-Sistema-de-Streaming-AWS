@@ -267,6 +267,7 @@ class ParticipacionGallosSerializer(ModelSerializer):
 
 class RegistroFiestaSerializer(ModelSerializer):
     fiestadetalle = OnlyFiestaSerializer(source='idfiesta', read_only=True) 
+    userdetalle = CustomUserSerializer(source='idusuario', read_only=True) 
 
     class Meta:
         model = RegistroFiesta
