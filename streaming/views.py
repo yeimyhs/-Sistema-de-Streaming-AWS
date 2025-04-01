@@ -150,7 +150,7 @@ class StreamingViewSet(ModelViewSet):
 
 class UsuarioViewSet(ModelViewSet):
     queryset = CustomUser.objects.order_by('pk')
-    serializer_class = UsuarioSerializer
+    serializer_class = UsuarioSerializer# CustomUserSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
             
     filterset_fields = [    'id', 'nombres', 'apellidos', 'telefono', 'eliminado', 'pais', 'ciudad', 'email', 'email_verified_at','is_staff',"estado"]

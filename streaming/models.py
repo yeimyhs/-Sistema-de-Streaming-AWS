@@ -264,6 +264,7 @@ class RegistroFiesta(models.Model):
     estado = models.IntegerField()
     idfiesta = models.ForeignKey(Fiesta, models.DO_NOTHING, db_column='idfiesta')
     idusuario = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='idusuario')
+    fechacreacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'registro_fiesta'
