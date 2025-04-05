@@ -19,6 +19,9 @@ urlpatterns = [
     path('channel/', views.CreateMediaLiveChannel.as_view(), name='create-medialive-channel'),
     path("chat/", views.chat_view, name="chat"),
     path("crear-stream/", views.generar_stream, name="crear-stream"),
+    path("listar-stream/", views.listar_stream, name="listar-stream"),
+    path("iniciar-stream/", views.iniciar_canal_view, name="iniciar-stream"),
+    path("detener-stream/", views.detener_canal_view, name="detener-stream"),
     
 ]
 router.register(r'duenio', views.DuenioViewSet, 'Duenio')

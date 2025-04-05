@@ -152,3 +152,68 @@ def crear_canal_medialive():
     except Exception as e:
         logger.error(f"Error al crear canal MediaLive: {str(e)}")
         raise e
+
+
+
+def listar_canales_medialive():
+    try:
+        client = boto3.client(
+            'medialive',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION
+        )
+
+        response = client.list_channels()
+        canales = response.get('Channels', [])
+
+        resultado = []
+        for canal in canales:
+            resultado.append({
+                'id': canal['Id'],
+                'name': canal['Name'],
+                'state': canal['State'],
+                'inputAttachments': canal['InputAttachments'],
+                'type': canal['ChannelClass']
+            })
+
+        return  resultado
+
+    except Exception as e:
+        logger.error(f"Error al listar canales MediaLive: {str(e)}")
+        raise e
+    
+    
+
+
+def get_medialive_client():
+    return boto3.client(
+        'medialive',
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION
+    )
+    
+    
+
+def iniciar_canal(canal_id):
+    client = get_medialive_client()
+    response = client.start_channel(ChannelId=canal_id)
+    return client.describe_channel(ChannelId=canal_id)
+
+
+def detener_canal(canal_id):
+    client = get_medialive_client()
+    response = client.stop_channel(ChannelId=canal_id)
+    return client.describe_channel(ChannelId=canal_id)
+
+
+def obtener_detalle_canal(canal_id):
+    client = get_medialive_client()
+    return client.describe_channel(ChannelId=canal_id)
+
+
+def listar_canales():
+    client = get_medialive_client()
+    response = client.list_channels()
+    return response.get('Channels', [])

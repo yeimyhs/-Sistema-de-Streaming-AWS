@@ -234,16 +234,64 @@ class CreateMediaLiveChannel(APIView):
 
 
 from django.http import JsonResponse
-from .aws_medialive import crear_canal_medialive
+from .aws_medialive import crear_canal_medialive, listar_canales_medialive
 import sys
 
 def generar_stream(request):
     try:
         resultado = crear_canal_medialive()
-        print("--------")
-        sys.stdout = open("debug.log", "a")
-        print("Este mensaje se escribirá en debug.log")
-        sys.stdout.flush()
+        
         return JsonResponse({"stream_url": resultado})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+def listar_stream(request):
+    try:
+        resultado = listar_canales_medialive()
+        
+        return JsonResponse({"canales": resultado})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from . import aws_medialive
+
+
+@csrf_exempt
+def iniciar_canal_view(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        canal_id = data.get('canal_id')
+        if not canal_id:
+            return JsonResponse({'error': 'Falta canal_id'}, status=400)
+
+        canal = aws_medialive.iniciar_canal(canal_id)
+        return JsonResponse({'mensaje': 'Canal iniciado', 'canal': canal})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def detener_canal_view(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        canal_id = data.get('canal_id')
+        if not canal_id:
+            return JsonResponse({'error': 'Falta canal_id'}, status=400)
+
+        canal = aws_medialive.detener_canal(canal_id)
+        return JsonResponse({'mensaje': 'Canal detenido', 'canal': canal})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
