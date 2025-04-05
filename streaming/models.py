@@ -272,7 +272,7 @@ class RegistroFiesta(models.Model):
 
 
 class GalponGallos(models.Model):
-    idparticipacion = models.BigAutoField(primary_key=True)
+    idgalpongallos = models.BigAutoField(primary_key=True)
     eliminado = models.SmallIntegerField(default = 0)
     idgallo = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo', related_name = 'gallo_galpondetalle')
     idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon', related_name='galpon_gallos')
@@ -281,7 +281,7 @@ class GalponGallos(models.Model):
         db_table = 'galpon_gallos'
         
 class GalponFiesta(models.Model):
-    idparticipacion = models.BigAutoField(primary_key=True)
+    idgalponfiesta = models.BigAutoField(primary_key=True)
     eliminado = models.SmallIntegerField(default = 0)
     idfiesta = models.ForeignKey(Fiesta, models.DO_NOTHING, db_column='idfiesta')
     idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon')
