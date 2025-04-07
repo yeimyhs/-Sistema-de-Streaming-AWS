@@ -191,10 +191,13 @@ class Configuracion(models.Model):
     correo = models.CharField(max_length=128)
     telefono = models.CharField(max_length=128, blank=True, null=True)
     estadostreaming = models.IntegerField(blank=True, null=True)
-    urlinput = models.TextField( blank=True, null=True)
+    
+    channel_id = models.CharField(max_length=128, blank=True, null=True)
+    urlinput1 = models.TextField( blank=True, null=True)
+    urlinput2 = models.TextField( blank=True, null=True)
     urloutput = models.TextField( blank=True, null=True)
     fechacreacion = models.DateTimeField(auto_now_add=True)
-    nombrecanal = models.CharField(max_length=128)
+    nombrecanal = models.CharField(max_length=128, blank=True, null=True)
 
     class Meta:
         db_table = 'Configuracion'
@@ -238,7 +241,7 @@ class Gallos(models.Model):
 class Streaming(models.Model):
     eliminado = models.SmallIntegerField(default = 0)
     idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento', blank=True, null=True)
-    urlstreaming = models.TextField()
+    urlgrabacion = models.TextField( blank=True, null=True)
     nombrevideolife = models.TextField()
     idstreaming = models.BigAutoField(primary_key=True)
 

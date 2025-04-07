@@ -237,10 +237,47 @@ from django.http import JsonResponse
 from .aws_medialive import crear_canal_medialive, listar_canales_medialive
 import sys
 
+
+@csrf_exempt
 def generar_stream(request):
     try:
-        resultado = crear_canal_medialive()
+        data = json.loads(request.body)
+        nombrecanal = data.get("nombrecanal")
         
+        if not nombrecanal:
+            return JsonResponse({"error": "Falta el nombre del canal"}, status=400)
+
+        
+        resultado = crear_canal_medialive(nombrecanal)
+        configuracion, creada = Configuracion.objects.get_or_create(
+        idconf=1,  # O usa otro campo único si prefieres
+        defaults={
+            'nombreweb': 'Mi Web',
+            'correo': 'correo@ejemplo.com',
+            'telefono': '123456789',
+            'estadostreaming': 0,
+            
+            'channel_id':'',
+            'urlinput1': '',
+            'urlinput2': '',
+            'urloutput': '',
+            'nombrecanal': ''
+        }
+        )
+        primer_rtmp = resultado.get("rtmp_input_urls", [None])[0]
+        seg_rtmp = resultado.get("rtmp_input_urls", [None])[1]
+        primer_hls = resultado.get("hls_output_url")
+        channel_id = resultado.get("channel_id")
+
+        configuracion.urlinput1 = primer_rtmp
+        configuracion.urlinput2 = seg_rtmp
+        configuracion.urloutput = primer_hls
+        configuracion.channel_id = channel_id
+        configuracion.nombrecanal = nombrecanal
+
+        configuracion.estadostreaming = 0  # Marcar como activo
+        configuracion.save()
+
         return JsonResponse({"stream_url": resultado})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -267,10 +304,11 @@ def iniciar_canal_view(request):
         return JsonResponse({'error': 'Método no permitido'}, status=405)
 
     try:
-        data = json.loads(request.body)
-        canal_id = data.get('canal_id')
+        configuracion = Configuracion.objects.get(idconf = 1)
+        
+        canal_id = configuracion.channel_id
         if not canal_id:
-            return JsonResponse({'error': 'Falta canal_id'}, status=400)
+            return JsonResponse({'error': 'Falta canal_id en la configuracion'}, status=400)
 
         canal = aws_medialive.iniciar_canal(canal_id)
         return JsonResponse({'mensaje': 'Canal iniciado', 'canal': canal})
@@ -279,6 +317,8 @@ def iniciar_canal_view(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+CLOUDFRONT_DOMAIN = "d17y4wxxn3lf6q.cloudfront.net"  # Tu dominio de CloudFront
+
 @csrf_exempt
 def detener_canal_view(request):
     if request.method != 'POST':
@@ -286,12 +326,33 @@ def detener_canal_view(request):
 
     try:
         data = json.loads(request.body)
-        canal_id = data.get('canal_id')
-        if not canal_id:
-            return JsonResponse({'error': 'Falta canal_id'}, status=400)
+        idstreaming = data.get("idstreaming")
+        configuracion = Configuracion.objects.get(idconf = 1)
+        canal_id = configuracion.channel_id
+        nombre_canal = configuracion.nombrecanal
+
+        if not canal_id or not nombre_canal:
+            return JsonResponse({'error': 'Faltan datos en configuracion'}, status=400)
 
         canal = aws_medialive.detener_canal(canal_id)
-        return JsonResponse({'mensaje': 'Canal detenido', 'canal': canal})
+        
+        streaming = Streaming.objects.get(idstreaming = idstreaming)
+        nombrestreming = streaming.nombrevideolife
+        
+        # 🧠 Mover grabación y obtener nueva ubicación
+        nueva_ubicacion = aws_medialive.mover_grabacion_a_nueva_ubicacion(canal_id, nombre_canal, nombrestreming)
+
+        # 🛰️ Construir enlace a CloudFront
+        url_playlist = f"https://{CLOUDFRONT_DOMAIN}/{nueva_ubicacion}playlist.m3u8"
+
+        streaming = Streaming.objects.get(idstreaming = idstreaming)
+        streaming.urlgrabacion = url_playlist
+        streaming.save()
+        return JsonResponse({
+            'mensaje': 'Canal detenido y grabación archivada',
+            'canal': canal,
+            'url_grabacion': url_playlist
+        })
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

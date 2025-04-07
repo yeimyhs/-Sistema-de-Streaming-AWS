@@ -1,3 +1,4 @@
+
 import boto3
 from django.conf import settings
 import logging
@@ -8,6 +9,7 @@ AWS_SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY
 AWS_REGION = settings.AWS_REGION
 AWS_MEDIALIVE_ROLE_ARN = settings.AWS_MEDIALIVE_ROLE_ARN
 BUCKET_NAME = "streaming-gallos-bucket"  # Reemplaza con tu bucket de S3
+CLOUDFRONT_DOMAIN = "d17y4wxxn3lf6q.cloudfront.net"  # Tu dominio de CloudFront
 
 # Inicializar cliente de MediaLive
 client = boto3.client(
@@ -17,10 +19,16 @@ client = boto3.client(
     region_name=AWS_REGION,
 )
 
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    region_name=settings.AWS_REGION
+)
 # Configurar logging
 logger = logging.getLogger(__name__)
 
-def crear_canal_medialive():
+def crear_canal_medialive(nombre_canal):
     try:
         # 1️⃣ Crear entrada en MediaLive (para OBS)
         input_response = client.create_input(
@@ -28,8 +36,8 @@ def crear_canal_medialive():
             Type="RTMP_PUSH",
             InputSecurityGroups=["3471356"],  # Reemplazar con el ID correcto
             Destinations=[
-                {"StreamName": "stream1"},
-                {"StreamName": "stream2"}
+                {"StreamName": f"{nombre_canal}"},
+                {"StreamName": f"{nombre_canal}"}
             ]
         )
 
@@ -43,7 +51,7 @@ def crear_canal_medialive():
 
         # 2️⃣ Crear canal en MediaLive con salida en S3
         channel_response = client.create_channel(
-            Name="MiCanalLive",
+            Name=nombre_canal,
             RoleArn=AWS_MEDIALIVE_ROLE_ARN,
             InputAttachments=[
                 {
@@ -56,10 +64,10 @@ def crear_canal_medialive():
                     "Id": "destination1",
                     "Settings": [
                         {
-                            "Url": f"s3://{BUCKET_NAME}/live-stream/primary/playlist"
+                            "Url": f"s3://{BUCKET_NAME}/live-stream/{nombre_canal}/playlist"
                         },
                         {
-                            "Url": f"s3://{BUCKET_NAME}/live-stream/backup/playlist"
+                            "Url": f"s3://{BUCKET_NAME}/live-stream/{nombre_canal}/backup/playlist"
                         }
                     ]
                 }
@@ -134,9 +142,11 @@ def crear_canal_medialive():
                 }
             }
         )
+        hls_bk_stream_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/live-stream/{nombre_canal}/playlist.m3u8"
 
-        # 3️⃣ Generar la URL de salida HLS directamente desde S3
-        hls_stream_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/live-stream/primary/playlist.m3u8"
+        # 3️⃣ Generar la URL de salida HLS desde CloudFront
+        hls_stream_url = f"https://{CLOUDFRONT_DOMAIN}/live-stream/{nombre_canal}/playlist.m3u8"
+
 
         # 4️⃣ Devolver las URLs
         result = {
@@ -144,7 +154,8 @@ def crear_canal_medialive():
             "stream_url": stream_urls,
             "channel_id": channel_response["Channel"]["Id"],
             "rtmp_input_urls": stream_urls,  # Para OBS
-            "hls_output_url": hls_stream_url  # Para ver la transmisión en S3
+            "hls_output_url": hls_stream_url,  # Para ver la transmisión a través de CloudFront
+            "hls_bk_stream_url": hls_bk_stream_url,  # Para ver la transmisión a través de CloudFront
         }
 
         return result
@@ -152,7 +163,6 @@ def crear_canal_medialive():
     except Exception as e:
         logger.error(f"Error al crear canal MediaLive: {str(e)}")
         raise e
-
 
 
 def listar_canales_medialive():
@@ -186,34 +196,69 @@ def listar_canales_medialive():
     
 
 
-def get_medialive_client():
-    return boto3.client(
-        'medialive',
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_REGION
-    )
-    
-    
 
 def iniciar_canal(canal_id):
-    client = get_medialive_client()
     response = client.start_channel(ChannelId=canal_id)
     return client.describe_channel(ChannelId=canal_id)
 
 
 def detener_canal(canal_id):
-    client = get_medialive_client()
     response = client.stop_channel(ChannelId=canal_id)
     return client.describe_channel(ChannelId=canal_id)
 
 
 def obtener_detalle_canal(canal_id):
-    client = get_medialive_client()
     return client.describe_channel(ChannelId=canal_id)
 
 
 def listar_canales():
-    client = get_medialive_client()
     response = client.list_channels()
     return response.get('Channels', [])
+
+
+
+# El nombre del bucket de S3
+BUCKET_NAME = "streaming-gallos-bucket"  # Reemplaza con tu bucket de S3
+
+# Función para obtener los detalles del canal
+def obtener_detalle_canal(canal_id):
+    return client.describe_channel(ChannelId=canal_id)
+
+# Función para mover los archivos a una nueva ubicación en S3
+def mover_grabacion_a_nueva_ubicacion(canal_id, nombre_canal, nombrestreming):
+    # Fecha y hora actual para crear una carpeta única
+    from datetime import datetime
+    current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    # Definir la nueva ruta de grabación en S3
+    nueva_ubicacion = f"live-recordings/{nombrestreming}_{current_time}/"
+
+    # Obtener los objetos de grabación en el bucket
+    # (Asumimos que los archivos están en la carpeta original 'live-stream')
+    grabaciones_ruta_original = f"live-stream/{nombre_canal}/"
+    try:
+        # Listar objetos en la carpeta de grabaciones
+        response = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix=grabaciones_ruta_original)
+        archivos = response.get('Contents', [])
+
+        # Mover cada archivo a la nueva ubicación
+        for archivo in archivos:
+            # Obtener el nombre del archivo
+            archivo_key = archivo['Key']
+            nueva_ruta = archivo_key.replace(grabaciones_ruta_original, nueva_ubicacion)
+
+            # Copiar el archivo a la nueva ubicación
+            s3_client.copy_object(
+                Bucket=BUCKET_NAME,
+                CopySource={'Bucket': BUCKET_NAME, 'Key': archivo_key},
+                Key=nueva_ruta
+            )
+
+            # Eliminar el archivo original
+            s3_client.delete_object(Bucket=BUCKET_NAME, Key=archivo_key)
+
+        logger.info(f"Grabación movida a la nueva ubicación: {nueva_ubicacion}")
+        return nueva_ubicacion
+    except Exception as e:
+        logger.error(f"Error al mover la grabación: {str(e)}")
+        raise e
