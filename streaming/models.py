@@ -253,7 +253,8 @@ class Streaming(models.Model):
 class ParticipacionGallos(models.Model):
     idparticipacion = models.BigAutoField(primary_key=True)
     eliminado = models.SmallIntegerField(default = 0)
-    idgallo = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo')
+    idgallo1 = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo1', related_name='combates_como_gallo1')
+    idgallo2 = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo2',related_name='combates_como_gallo2')
     idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento', related_name='evento_gallos_vs')
 
     class Meta:
