@@ -12,7 +12,7 @@ def decrypt_channel_token(token):
 
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .utils import decrypt_channel_token
+
 
 class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
