@@ -163,7 +163,7 @@ class UsuarioViewSet(ModelViewSet):
 class ParticipacionGallosViewSet(ModelViewSet):
     queryset = ParticipacionGallos.objects.order_by('pk')
     serializer_class = ParticipacionGallosSerializer
-    filterset_fields = ['idgallo1', 'idgallo2','idevento']
+    filterset_fields = ['idgallo1', 'idgallo2','idevento', 'culminacion', 'resultado']
     search_fields = []
 
 

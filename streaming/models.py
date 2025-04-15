@@ -129,6 +129,7 @@ class Fiesta(models.Model):
     fechafin = models.DateField()
     fechacreacion = models.DateTimeField(auto_now_add=True)
     precio = models.FloatField()
+    imagen = models.ImageField(upload_to='Fiestaimagen/', blank=True, null=True)
 
     estado = models.IntegerField()
  
@@ -256,7 +257,9 @@ class ParticipacionGallos(models.Model):
     idgallo1 = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo1', related_name='combates_como_gallo1')
     idgallo2 = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo2',related_name='combates_como_gallo2')
     idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento', related_name='evento_gallos_vs')
-
+    culminacion = models.CharField(max_length=128, blank=True, null=True)
+    resultado = models.CharField(max_length=128, blank=True, null=True)
+    duracion = models.DurationField(blank=True, null=True)
     class Meta:
         db_table = 'participacion_gallos'
 
