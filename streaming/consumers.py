@@ -1,6 +1,6 @@
 from cryptography.fernet import Fernet
 
-FERNET_KEY = b'tu_clave_fernet_aqui'  # Usa Fernet.generate_key() para generar una y guárdala segura
+FERNET_KEY = b'tVYtU0pLx49t4Zcq95R6BKH9p__q_v3Zyg3tn61AgJY='  # Usa Fernet.generate_key() para generar una y guárdala segura
 
 fernet = Fernet(FERNET_KEY)
 
