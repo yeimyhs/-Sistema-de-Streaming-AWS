@@ -130,7 +130,7 @@ class ConfiguracionViewSet(ModelViewSet):
 class EventoViewSet(ModelViewSet):
     queryset = Evento.objects.order_by('pk')
     serializer_class = EventoSerializer
-    filterset_fields = ['titulo', 'fechaevento', 'idfiesta', 'estado']
+    filterset_fields = ['titulo', 'fechaevento', 'idfiesta', 'estado', 'isstreaming']
     search_fields = ['titulo', 'descripcion']
 
 

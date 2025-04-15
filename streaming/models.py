@@ -213,8 +213,9 @@ class Evento(models.Model):
     fechacreacion = models.DateTimeField(auto_now_add=True)
     imagen = models.ImageField(upload_to='eventoflayer/', blank=True, null=True)
     idfiesta = models.ForeignKey(Fiesta, models.DO_NOTHING, db_column='idfiesta', related_name="eventos")
-
     estado = models.IntegerField()
+
+    isstreaming = models.IntegerField()
  
 
     class Meta:
