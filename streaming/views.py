@@ -361,7 +361,7 @@ def detener_canal_view(request):
 
 from django.http import JsonResponse
 from django.shortcuts import render
-from utils import encrypt_channel_name
+from django.utils import encrypt_channel_name
 
 def chat_page(request, room_name):
     # Generamos el token encriptado para el canal
