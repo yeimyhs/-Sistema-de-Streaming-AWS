@@ -356,3 +356,17 @@ def detener_canal_view(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import render
+from .utils import encrypt_channel_name
+
+def chat_page(request, room_name):
+    # Generamos el token encriptado para el canal
+    token = encrypt_channel_name(room_name)
+    return render(request, 'chat.html', {
+        'room_name': room_name,
+        'token': token
+    })

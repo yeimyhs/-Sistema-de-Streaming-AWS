@@ -192,16 +192,17 @@ class EventoSerializer(ModelSerializer):
         model = Evento
         fields = '__all__'
     def get_gallosvs(self, obj):
-        participaciones = ParticipacionGallos.objects.select_related('idgallo').filter(idevento=obj)
+        participaciones = ParticipacionGallos.objects.select_related('idgallo1', 'idgallo2').filter(idevento=obj)
         return [
             {
                 "idparticipacion": p.idparticipacion,
-                "idgallo": p.idgallo.idgallo,
-                "gallo": GallosSerializer(p.idgallo).data
+                "idgallo1": p.idgallo1.idgallo,
+                "gallo1": GallosSerializer(p.idgallo1).data,
+                "idgallo2": p.idgallo2.idgallo,
+                "gallo2": GallosSerializer(p.idgallo2).data,
             }
             for p in participaciones
         ]
-
 class OnlyGalponSerializer(ModelSerializer):
     iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True) 
     class Meta:

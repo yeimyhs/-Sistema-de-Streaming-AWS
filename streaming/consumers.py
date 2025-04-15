@@ -1,3 +1,59 @@
+from cryptography.fernet import Fernet
+
+FERNET_KEY = b'tu_clave_fernet_aqui'  # Usa Fernet.generate_key() para generar una y guárdala segura
+
+fernet = Fernet(FERNET_KEY)
+
+def encrypt_channel_name(channel_name):
+    return fernet.encrypt(channel_name.encode()).decode()
+
+def decrypt_channel_token(token):
+    return fernet.decrypt(token.encode()).decode()
+
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+from .utils import decrypt_channel_token
+
+class CommentConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        try:
+            token = self.scope['url_route']['kwargs']['token']
+            self.room_name = decrypt_channel_token(token)
+            self.room_group_name = f'comments_{self.room_name}'
+
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+            await self.accept()
+        except Exception as e:
+            await self.close()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        message = data['message']
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': message
+            }
+        )
+
+    async def chat_message(self, event):
+        await self.send(text_data=json.dumps({
+            'message': event['message']
+        }))
+
+
+
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
