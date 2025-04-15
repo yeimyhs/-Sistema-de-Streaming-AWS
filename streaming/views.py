@@ -310,7 +310,14 @@ def iniciar_canal_view(request):
         if not canal_id:
             return JsonResponse({'error': 'Falta canal_id en la configuracion'}, status=400)
 
+        
         canal = aws_medialive.iniciar_canal(canal_id)
+        data = json.loads(request.body)
+        idevento = data.get("idevento")
+        evento = Evento.objects.get(idevento = idevento)
+        evento.isstreaming = 1
+        evento.save()
+        
         return JsonResponse({'mensaje': 'Canal iniciado', 'canal': canal})
 
     except Exception as e:
@@ -327,6 +334,10 @@ def detener_canal_view(request):
     try:
         data = json.loads(request.body)
         idstreaming = data.get("idstreaming")
+        idevento = data.get("idevento")
+        evento = Evento.objects.get(idevento = idevento)
+        evento.isstreaming = 2
+        evento.save()
         configuracion = Configuracion.objects.get(idconf = 1)
         canal_id = configuracion.channel_id
         nombre_canal = configuracion.nombrecanal
