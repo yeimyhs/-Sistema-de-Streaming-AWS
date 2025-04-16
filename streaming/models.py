@@ -56,6 +56,7 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+
     def create_superuser(self, email, password=None, **extra_fields):
         # Establece is_staff y is_superuser para el superusuario
         extra_fields.setdefault('is_staff', True)
@@ -253,13 +254,22 @@ class Streaming(models.Model):
 
 
 class ParticipacionGallos(models.Model):
+    CULMINACION_OPCIONES = [
+    ("0", "Muerto"),
+    ("1", "Tumbado"),
+    ("2", "Empate"),
+    ("3", "Anulado"),
+    ]
     idparticipacion = models.BigAutoField(primary_key=True)
     eliminado = models.SmallIntegerField(default = 0)
     idgallo1 = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo1', related_name='combates_como_gallo1')
     idgallo2 = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo2',related_name='combates_como_gallo2')
     idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento', related_name='evento_gallos_vs')
-    culminacion = models.CharField(max_length=128, blank=True, null=True)
-    resultado = models.CharField(max_length=128, blank=True, null=True)
+    culminacion1 = models.CharField(max_length=1, choices=CULMINACION_OPCIONES, blank=True, null=True)
+    culminacion2 = models.CharField(max_length=1, choices=CULMINACION_OPCIONES, blank=True, null=True)
+    resultadoidgalpon = models.ForeignKey('Galpon', on_delete=models.CASCADE, related_name='resultados_participaciones', blank=True, null=True)
+    #idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon', related_name='galpon_gallos')
+    #resultadoidgalpon = models.IntegerField( blank=True, null=True)
     duracion = models.DurationField(blank=True, null=True)
     class Meta:
         db_table = 'participacion_gallos'
