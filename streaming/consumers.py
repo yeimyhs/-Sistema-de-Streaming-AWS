@@ -111,3 +111,84 @@ class ChatgrupalConsumer(AsyncWebsocketConsumer):
             "message": event["message"],
             "username": event["username"],
         }))
+
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+from .models import Comentario
+from django.utils import timezone
+from django.contrib.auth import get_user_model
+from channels.db import database_sync_to_async
+from channels.db import database_sync_to_async
+
+User = get_user_model()
+
+class ComentarioConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        # Aceptar la conexión WebSocket
+        await self.accept()
+        self.stream_groups = set()
+
+    async def disconnect(self, close_code):
+        # Salirse de todos los grupos a los que se unió
+        for group_name in self.stream_groups:
+            await self.channel_layer.group_discard(group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+
+        comentario = data.get("comentario")
+        idusuario = data.get("idusuario")
+        idstreaming = data.get("idstreaming")
+
+        if not (comentario and idusuario and idstreaming):
+            return  # datos incompletos, ignorar
+
+        # Crear grupo según el streaming
+        group_name = f"streaming_{idstreaming}"
+
+        # Unirse si aún no está en ese grupo
+        if group_name not in self.stream_groups:
+            await self.channel_layer.group_add(group_name, self.channel_name)
+            self.stream_groups.add(group_name)
+
+        # Guardar el comentario en la base de datos
+        usuario = await self.get_usuario(idusuario)
+        if usuario is None:
+            return  # Usuario inválido
+
+        comentario_obj = await self.save_comentario(comentario, usuario, idstreaming)
+
+        # Enviar el mensaje al grupo
+        await self.channel_layer.group_send(
+            group_name,
+            {
+                'type': 'chat_message',
+                'comentario': comentario_obj.comentario,
+                'usuario': f"{usuario.nombres} {usuario.apellidos}",
+                'fecha': comentario_obj.fechacreacion.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        )
+
+    async def chat_message(self, event):
+        await self.send(text_data=json.dumps({
+            'comentario': event['comentario'],
+            'usuario': event['usuario'],
+            'fecha': event['fecha'],
+        }))
+
+    @database_sync_to_async
+    def get_usuario(self, idusuario):
+        try:
+            return User.objects.get(pk=idusuario)
+        except User.DoesNotExist:
+            return None
+
+    @database_sync_to_async
+    def save_comentario(self, texto, usuario, idstreaming):
+        return Comentario.objects.create(
+            comentario=texto,
+            idusuario=usuario,
+            estado=1,
+            idstreaming_id=idstreaming,
+            fechacreacion=timezone.now()
+        )

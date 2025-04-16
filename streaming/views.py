@@ -381,3 +381,18 @@ def chat_page(request, room_name):
         'room_name': room_name,
         'token': token
     })
+    
+    
+    
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+
+def chat_view_commeffnt(request, streaming_id):
+    return render(request, 'comentario/chat.html', {
+        'streaming_id': streaming_id,
+        'user_id': request.user.id if request.user.is_authenticated else 1  # user demo
+    })
+    
+def chat_view_comment(request):
+    return render(request, 'comentario/chat.html')

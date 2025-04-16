@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Básico en Tiempo Real</title>
+</head>
+<body>
+    <h2>Comentarios en tiempo real</h2>
+
+    <label>ID Usuario:</label><br>
+    <input type="number" id="idusuario"><br><br>
+
+    <label>ID Streaming:</label><br>
+    <input type="number" id="idstreaming"><br><br>
+
+    <label>Comentario:</label><br>
+    <textarea id="mensaje" placeholder="Escribe tu comentario..."></textarea><br><br>
+
+    <button onclick="enviar()">Enviar</button>
+
+    <h3>Mensajes:</h3>
+    <div id="comentarios"></div>
+
+    <script>
+        const socket = new WebSocket(`ws://${window.location.host}/ws/comentarios/`);
+
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const comentarios = document.getElementById("comentarios");
+            comentarios.innerHTML += `<p><strong>${data.usuario}:</strong> ${data.comentario} <em>${data.fecha}</em></p>`;
+        };
+
+        function enviar() {
+            const comentario = document.getElementById("mensaje").value;
+            const idusuario = document.getElementById("idusuario").value;
+            const idstreaming = document.getElementById("idstreaming").value;
+
+            if (!idusuario || !idstreaming || !comentario) {
+                alert("Debes llenar todos los campos.");
+                return;
+            }
+
+            socket.send(JSON.stringify({
+                comentario: comentario,
+                idusuario: idusuario,
+                idstreaming: idstreaming
+            }));
+
+            document.getElementById("mensaje").value = '';
+        }
+    </script>
+</body>
+</html>
