@@ -16,9 +16,13 @@ urlpatterns = [
     path('logoutall/', knox_views.LogoutAllView.as_view(), name='knox_logoutall'),
     
     path('register/', views.RegisterAPI.as_view(), name='register'),
-    path('channel/', views.CreateMediaLiveChannel.as_view(), name='create-medialive-channel'),
+    path('ranking/', views.RankingView.as_view(), name='ranking'),
+    
     path("chat/", views.chat_view, name="chat"),
     path("streamcomentarios/", views.chat_view_comment, name="chats"),
+    
+    
+    path('channel/', views.CreateMediaLiveChannel.as_view(), name='create-medialive-channel'),
     path("crear-stream/", views.generar_stream, name="crear-stream"),
     path("listar-stream/", views.listar_stream, name="listar-stream"),
     path("iniciar-stream/", views.iniciar_canal_view, name="iniciar-stream"),

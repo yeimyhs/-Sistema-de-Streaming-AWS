@@ -396,3 +396,96 @@ def chat_view_commeffnt(request, streaming_id):
     
 def chat_view_comment(request):
     return render(request, 'comentario/chat.html')
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.db.models import Q
+from .models import ParticipacionGallos, GalponGallos, Galpon
+from datetime import timedelta
+
+class RankingView(APIView):
+    def get(self, request):
+        participaciones = ParticipacionGallos.objects.select_related(
+            'idgallo1',
+            'idgallo2',
+            'resultadoidgalpon'
+        ).all()
+
+        galpon_stats = {}
+
+        def obtener_galpon(gallo):
+            try:
+                return GalponGallos.objects.filter(idgallo=gallo, eliminado=0).first().idgalpon
+            except:
+                return None
+
+        for p in participaciones:
+            g1 = obtener_galpon(p.idgallo1)
+            g2 = obtener_galpon(p.idgallo2)
+            resultado = p.resultadoidgalpon
+
+            for g in [g1, g2]:
+                if not g:
+                    continue
+                if g.pk not in galpon_stats:
+                    galpon_stats[g.pk] = {
+                        'galpon': g,
+                        'pg': 0,
+                        'pe': 0,
+                        'pp': 0,
+                        'puntaje': 0,
+                        'tiempo': timedelta(0),
+                    }
+
+            if p.duracion:
+                if g1:
+                    galpon_stats[g1.pk]['tiempo'] += p.duracion
+                if g2:
+                    galpon_stats[g2.pk]['tiempo'] += p.duracion
+
+            # PG
+            if resultado:
+                galpon_stats[resultado.pk]['pg'] += 1
+
+            # PE: empate (culminacion1 o culminacion2 == '2') y no ganó
+            empate = p.culminacion1 == '2' or p.culminacion2 == '2'
+            if empate:
+                if g1 and resultado != g1:
+                    galpon_stats[g1.id]['pe'] += 1
+                if g2 and resultado != g2:
+                    galpon_stats[g2.id]['pe'] += 1
+
+        # Calcular PP y puntaje
+        for stats in galpon_stats.values():
+            galpon = stats['galpon']
+            total_participaciones = ParticipacionGallos.objects.filter(
+                Q(idgallo1__in=galpon.galpon_gallos.values_list('idgallo', flat=True)) |
+                Q(idgallo2__in=galpon.galpon_gallos.values_list('idgallo', flat=True))
+            ).count()
+            stats['pp'] = total_participaciones - stats['pg'] - stats['pe']
+            stats['puntaje'] = stats['pg'] * 3 + stats['pe']
+
+        # Ordenamos por puntaje y tiempo
+        ranking = sorted(
+            galpon_stats.values(),
+            key=lambda x: (-x['puntaje'], x['tiempo'])
+        )
+
+        response_data = []
+        for idx, item in enumerate(ranking, start=1):
+            galpon = item['galpon']
+            response_data.append({
+                'nro': idx,
+                'galpon': galpon.titulo,
+                'propietario': f"{galpon.idduenio.nombres} {galpon.idduenio.apellidos}" if galpon.idduenio else "Sin dueño",
+                'pais': galpon.pais.nombre if galpon.pais else "Desconocido",
+                'pg': item['pg'],
+                'pe': item['pe'],
+                'pp': item['pp'],
+                'puntaje': item['puntaje'],
+                'tiempo': item['tiempo'],
+            })
+
+        return Response(response_data)

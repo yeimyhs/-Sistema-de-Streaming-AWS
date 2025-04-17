@@ -10,6 +10,17 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 User = get_user_model()
 
+class RankingSerializer(serializers.Serializer):
+    nro = serializers.IntegerField()
+    galpon = serializers.CharField()
+    propietario = serializers.CharField()
+    pais = serializers.CharField()
+    pg = serializers.IntegerField()
+    pe = serializers.IntegerField()
+    pp = serializers.IntegerField()
+    puntaje = serializers.IntegerField()
+    tiempo = serializers.DurationField()
+    
 class CustomUserSerializer(ModelSerializer):
     class Meta:
         #depth = 1
