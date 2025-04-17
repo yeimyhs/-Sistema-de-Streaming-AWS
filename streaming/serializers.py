@@ -160,11 +160,11 @@ class GalponFiestaSerializer(ModelSerializer):
         model = GalponFiesta
         fields = '__all__'
 
-class GalponGallosSerializer(ModelSerializer):
+#class GalponGallosSerializer(ModelSerializer):
 
-    class Meta:
-        model = GalponGallos
-        fields = '__all__'
+#    class Meta:
+#        model = GalponGallos
+#        fields = '__all__'
         
 class DuenioSerializer(ModelSerializer):
 
@@ -202,15 +202,7 @@ class GallosidGalponSerializer(ModelSerializer):
         model = Gallos
         fields = '__all__'
 
-    def get_galpondetalle(self, obj):
-        gallos_ids = set(obj.gallo_galpondetalle.values_list('idgalpon', flat=True))
-        fiesta_ids = set(self.context.get('galpon_ids_fiesta', []))
-        interseccion_ids = gallos_ids & fiesta_ids
 
-        galpon = Galpon.objects.filter(idgalpon__in=interseccion_ids).first()
-        if galpon:
-            return OnlyGalponSerializer(galpon).data
-        return None
 
 class EventoSerializer(ModelSerializer):
     gallosvs = serializers.SerializerMethodField()
@@ -220,20 +212,9 @@ class EventoSerializer(ModelSerializer):
         fields = '__all__'
 
     def get_gallosvs(self, obj):
-        participaciones = ParticipacionGallos.objects.select_related('idgallo1', 'idgallo2').filter(idevento=obj)
-
-        galpon_ids_fiesta = GalponFiesta.objects.filter(idfiesta=obj.idfiesta).values_list('idgalpon', flat=True)
-
-        return [
-            {
-                "idparticipacion": p.idparticipacion,
-                "idgallo1": p.idgallo1.idgallo,
-                "gallo1": GallosidGalponSerializer(p.idgallo1, context={'galpon_ids_fiesta': galpon_ids_fiesta}).data,
-                "idgallo2": p.idgallo2.idgallo,
-                "gallo2": GallosidGalponSerializer(p.idgallo2, context={'galpon_ids_fiesta': galpon_ids_fiesta}).data,
-            }
-            for p in participaciones
-        ]
+        participaciones = obj.evento_gallos_vs.filter(eliminado=0)
+        serializer = ParticipacionGallosSerializer(participaciones, many=True)
+        return serializer.data
 
 
 class OnlyGalponSerializer(ModelSerializer):
@@ -242,18 +223,20 @@ class OnlyGalponSerializer(ModelSerializer):
         model = Galpon
         fields = '__all__'
 
-        
+class OnlyGalponGallosDuenioSerializer(ModelSerializer):
+    iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True) 
+    class Meta:
+        model = Galpon
+        fields = '__all__'
+              
         
 class GallosSerializer(ModelSerializer):
-    galpondetalle = serializers.SerializerMethodField()
+    galpondetalle = OnlyGalponSerializer(source='idgalpon', read_only=True)
     
     class Meta:
         model = Gallos
         fields = '__all__'
         
-    def get_galpondetalle(self, obj):
-        return OnlyGalponSerializer(Galpon.objects.filter(idgalpon__in=obj.gallo_galpondetalle.values_list('idgalpon', flat=True)), many=True).data
-
 
 class OnlyGallosSerializer(ModelSerializer):
     class Meta:
@@ -263,48 +246,80 @@ class OnlyGallosSerializer(ModelSerializer):
 
 class GalponSerializer(ModelSerializer):
     iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True) 
+    #gallos = serializers.SerializerMethodField()
+    gallos = OnlyGallosSerializer(many=True, read_only=True, source='idgalpon_actualmente.all')
     #gallos = GallosSerializer(many=True, read_only=True, source='galpon_gallos.all')
-    gallos = serializers.SerializerMethodField()
+    #!!!
+    #gallos = serializers.SerializerMethodField()
     class Meta:
         model = Galpon
         fields = '__all__'
-    def get_gallos(self, obj):
-        galpon_gallos = GalponGallos.objects.select_related('idgallo').filter(idgalpon=obj)
-        return [
-            {
-                "idgalpongallos": gg.idgalpongallos,
-                "idgallo": gg.idgallo.idgallo,
-                "gallo": OnlyGallosSerializer(gg.idgallo).data
-            }
-            for gg in galpon_gallos
-        ]
+        
+   
+    #def get_gallos(self, obj):
+    #    galpon_gallos = GalponGallos.objects.select_related('idgallo').filter(idgalpon=obj)
+    #    return [
+    #        {
+    #            "idgalpongallos": gg.idgalpongallos,
+    #            "idgallo": gg.idgallo.idgallo,
+    #            "gallo": OnlyGallosSerializer(gg.idgallo).data
+    #        }
+    #        for gg in galpon_gallos
+    #    ]
+        
+    #!!
         #return GallosSerializer(obj.galpon_gallos.values_list('idgallo', flat=True), many=True).data
     #def __init__(self, *args, **kwargs):
     #    super().__init__(*args, **kwargs)
     #    self.fields['gallos'] = GallosSerializer(many=True, read_only=True, source='galpon_gallos.all')
 
 
-        
+class OnlyGalloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gallos
+        fields = ['idgallo', 'nombre']
+
+
+class GalponSerializerConGallos(serializers.ModelSerializer):
+    gallos = serializers.SerializerMethodField()
+    iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True) 
+
+    class Meta:
+        model = Galpon
+        fields = ['idgalpon', 'titulo', 'gallos', 'iddueniodetalle']
+
+    def get_gallos(self, obj):
+        fiesta = self.context.get('fiesta')
+        if not fiesta:
+            return []
+        inscritos = GalponGalloFiesta.objects.filter(
+            idgalponfiesta__idgalpon=obj,
+            idgalponfiesta__idfiesta=fiesta
+        ).select_related('idgallo')
+        return OnlyGalloSerializer([i.idgallo for i in inscritos], many=True).data
+       
 class FiestaSerializer(ModelSerializer):
-    galpones = serializers.SerializerMethodField()
+    galpones = serializers.SerializerMethodField()    
+    eventos = serializers.SerializerMethodField()
+
     class Meta:
         model = Fiesta
         fields = '__all__'
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['eventos'] = EventoSerializer(many=True, read_only=True) 
-        
+
+    def get_eventos(self, obj):
+        eventos = Evento.objects.filter(idfiesta=obj).prefetch_related(
+            'evento_gallos_vs__idgallo1',
+            'evento_gallos_vs__idgallo2',
+            'evento_gallos_vs__idgalpon1',
+            'evento_gallos_vs__idgalpon2',
+        )
+        return EventoSerializer(eventos, many=True).data
+
     def get_galpones(self, obj):
-        galpon_fiesta = GalponFiesta.objects.select_related('idgalpon').filter(idfiesta=obj)
-        return [
-            {
-                "idgalponfiesta": gf.idgalponfiesta,
-                "idgalpon": gf.idgalpon.idgalpon,
-                "galpon": GalponSerializer(gf.idgalpon).data
-            }
-            for gf in galpon_fiesta
-        ]
+        galpon_fiesta_qs = GalponFiesta.objects.filter(idfiesta=obj).select_related('idgalpon')
+        galpones = [gf.idgalpon for gf in galpon_fiesta_qs]
+        serializer = GalponSerializerConGallos(galpones, many=True, context={'fiesta': obj})
+        return serializer.data
 
 class OnlyFiestaSerializer(ModelSerializer):
     class Meta:
@@ -322,13 +337,62 @@ class UsuarioSerializer(ModelSerializer):
     class Meta:
         model = CustomUser
         fields = '__all__'
+#-----------------------------------------
+class GalloSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gallos
+        fields = '__all__' # ajusta según tu modelo
+
+class GalponConGallosSerializer(serializers.ModelSerializer):
+    gallos = serializers.SerializerMethodField()
+    iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True) 
+
+    class Meta:
+        model = Galpon
+        fields = ['idgalpon', 'titulo', 'gallos','iddueniodetalle']
+
+    def get_gallos(self, galpon):
+        fiesta_id = self.context.get("fiesta_id")
+        if not fiesta_id:
+            return []
+
+        galpon_fiesta = GalponFiesta.objects.filter(
+            idgalpon=galpon,
+            idfiesta=fiesta_id
+        ).first()
+
+        if not galpon_fiesta:
+            return []
+
+        gallo_qs = Gallos.objects.filter(
+            idgallo_galpon_fiesta_inscripcion__idgalponfiesta=galpon_fiesta
+        ).distinct()
+
+        return GalloSimpleSerializer(gallo_qs, many=True).data
 
 
-class ParticipacionGallosSerializer(ModelSerializer):
+class ParticipacionGallosSerializer(serializers.ModelSerializer):
+    galpon1_detalle_completo = serializers.SerializerMethodField()
+    galpon2_detalle_completo = serializers.SerializerMethodField()
 
     class Meta:
         model = ParticipacionGallos
         fields = '__all__'
+
+    def get_fiesta_id(self, obj):
+        return obj.idevento.idfiesta_id if obj.idevento and obj.idevento.idfiesta_id else None
+
+    def get_galpon_detalle(self, galpon, fiesta_id):
+        context = {'fiesta_id': fiesta_id}
+        return GalponConGallosSerializer(galpon, context=context).data if galpon and fiesta_id else None
+
+    def get_galpon1_detalle_completo(self, obj):
+        fiesta_id = self.get_fiesta_id(obj)
+        return self.get_galpon_detalle(obj.idgalpon1, fiesta_id)
+
+    def get_galpon2_detalle_completo(self, obj):
+        fiesta_id = self.get_fiesta_id(obj)
+        return self.get_galpon_detalle(obj.idgalpon2, fiesta_id)
 
 
 class RegistroFiestaSerializer(ModelSerializer):
@@ -343,4 +407,10 @@ class EstadoSerializer(ModelSerializer):
 
     class Meta:
         model = Estado
+        fields = '__all__'
+
+class GalponGalloFiestaSerializer(ModelSerializer):
+
+    class Meta:
+        model = GalponGalloFiesta
         fields = '__all__'

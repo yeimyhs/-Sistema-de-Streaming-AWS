@@ -235,6 +235,7 @@ class Gallos(models.Model):
     experiencia = models.FloatField(default = 0)
     fechacreacion = models.DateTimeField(auto_now_add=True)
     imagen = models.ImageField(upload_to='gallofoto/', blank=True, null=True)
+    idgalpon = models.ForeignKey('Galpon', on_delete=models.CASCADE, related_name='idgalpon_actualmente', blank=True, null=True)
     idgallo = models.BigAutoField(primary_key=True)
     
 
@@ -293,14 +294,14 @@ class RegistroFiesta(models.Model):
         unique_together = (('idfiesta', 'idusuario'),)
 
 
-class GalponGallos(models.Model):
-    idgalpongallos = models.BigAutoField(primary_key=True)
-    eliminado = models.SmallIntegerField(default = 0)
-    idgallo = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo', related_name = 'gallo_galpondetalle')
-    idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon', related_name='galpon_gallos')
+#class GalponGallos(models.Model):
+#    idgalpongallos = models.BigAutoField(primary_key=True)
+#    eliminado = models.SmallIntegerField(default = 0)
+#    idgallo = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo', related_name = 'gallo_galpondetalle')
+#    idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon', related_name='galpon_gallos')
 
-    class Meta:
-        db_table = 'galpon_gallos'
+#    class Meta:
+#        db_table = 'galpon_gallos'
         
 class GalponFiesta(models.Model):
     idgalponfiesta = models.BigAutoField(primary_key=True)
@@ -310,3 +311,13 @@ class GalponFiesta(models.Model):
 
     class Meta:
         db_table = 'galpon_fiesta'
+        
+        
+class GalponGalloFiesta(models.Model):
+    idgalpongallofiesta = models.BigAutoField(primary_key=True)
+    eliminado = models.SmallIntegerField(default = 0)
+    idgalponfiesta = models.ForeignKey(GalponFiesta, models.DO_NOTHING, related_name='idgalponfiesta_inscripcion')
+    idgallo = models.ForeignKey(Gallos, models.DO_NOTHING, related_name='idgallo_galpon_fiesta_inscripcion')
+
+    class Meta:
+        db_table = 'galpon_gallo_fiesta'

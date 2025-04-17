@@ -17,6 +17,8 @@ urlpatterns = [
     
     path('register/', views.RegisterAPI.as_view(), name='register'),
     path('ranking/', views.RankingView.as_view(), name='ranking'),
+    path('asignar-gallos-a-galpon/', views.asignar_gallos_a_galpon, name='asignar-gallos-a-galpon'),
+    path('asignar-vs-por-evento/', views.asignar_vs_por_experiencia_aleatoria, name='asignar-vs-por-evento'),
     
     path("chat/", views.chat_view, name="chat"),
     path("streamcomentarios/", views.chat_view_comment, name="chats"),
@@ -43,7 +45,8 @@ router.register(r'estado', views.EstadoViewSet, 'Estado')
 router.register(r'galpon', views.GalponViewSet, 'Galpon')
 router.register(r'fiesta', views.FiestaViewSet, 'Fiesta')
 router.register(r'galponfiesta', views.GalponFiestaViewSet, 'GalponFiesta')
-router.register(r'galpongallos', views.GalponGallosViewSet, 'GalponGallos')
+router.register(r'galpongallofiesta', views.GalponGalloFiestaViewSet, 'GalponGalloFiesta')
+#router.register(r'galpongallos', views.GalponGallosViewSet, 'GalponGallos')
 
 urlpatterns = urlpatterns +  router.urls
 

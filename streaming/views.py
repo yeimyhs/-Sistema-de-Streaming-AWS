@@ -128,7 +128,12 @@ class ConfiguracionViewSet(ModelViewSet):
 
 
 class EventoViewSet(ModelViewSet):
-    queryset = Evento.objects.order_by('pk')
+    queryset = Evento.objects.prefetch_related(
+    'evento_gallos_vs__idgallo1',
+    'evento_gallos_vs__idgallo2',
+    'evento_gallos_vs__idgalpon1',
+    'evento_gallos_vs__idgalpon2',
+).order_by('pk')
     serializer_class = EventoSerializer
     filterset_fields = ['titulo', 'fechaevento', 'idfiesta', 'estado', 'isstreaming']
     search_fields = ['titulo', 'descripcion']
@@ -182,18 +187,31 @@ class EstadoViewSet(ModelViewSet):
     
     
 
-class GalponGallosViewSet(ModelViewSet):
-    queryset = GalponGallos.objects.order_by('pk')
-    serializer_class = GalponGallosSerializer
-    filterset_fields = ['idgallo', 'idgalpon']
-    search_fields = []
+#class GalponGallosViewSet(ModelViewSet):
+ #   queryset = GalponGallos.objects.order_by('pk')
+  #  serializer_class = GalponGallosSerializer
+   # filterset_fields = ['idgallo', 'idgalpon']
+    #search_fields = []
 
 class GalponFiestaViewSet(ModelViewSet):
     queryset = GalponFiesta.objects.order_by('pk')
     serializer_class = GalponFiestaSerializer
     filterset_fields = ['idfiesta', 'idgalpon']
     search_fields = []
-
+    
+    def perform_create(self, serializer):
+        galpon_fiesta = serializer.save()
+        gallos = Gallos.objects.filter(idgalpon=galpon_fiesta.idgalpon, eliminado=0)
+        for gallo in gallos:
+            GalponGalloFiesta.objects.create(
+                idgalponfiesta=galpon_fiesta,
+                idgallo=gallo
+            )
+class GalponGalloFiestaViewSet(ModelViewSet):
+    queryset = GalponGalloFiesta.objects.order_by('pk')
+    serializer_class = GalponGalloFiestaSerializer
+    filterset_fields = ['idgalponfiesta', 'idgallo']
+    search_fields = []
 
     
 from django.shortcuts import render
@@ -402,41 +420,40 @@ def chat_view_comment(request):
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
-from .models import ParticipacionGallos, GalponGallos, Galpon
+from .models import ParticipacionGallos, Galpon
 from datetime import timedelta
+
 
 class RankingView(APIView):
     def get(self, request):
+        # Obtenemos todas las participaciones de gallos en eventos
         participaciones = ParticipacionGallos.objects.select_related(
-            'idgallo1',
-            'idgallo2',
-            'resultadoidgalpon'
+            'idgalpon1', 'idgalpon2'
         ).all()
 
         galpon_stats = {}
 
-        def obtener_galpon(gallo):
-            try:
-                return GalponGallos.objects.filter(idgallo=gallo, eliminado=0).first().idgalpon
-            except:
-                return None
-
         for p in participaciones:
-            g1 = obtener_galpon(p.idgallo1)
-            g2 = obtener_galpon(p.idgallo2)
-            resultado = p.resultadoidgalpon
+            # Excluir participaciones anuladas o con datos nulos
+            if p.culminacion1 is None or p.culminacion2 is None or p.culminacion1 == '3' or p.culminacion2 == '3':
+                continue
 
+            g1 = p.idgalpon1  # Galpón ganador
+            g2 = p.idgalpon2  # Galpón perdedor
+            resultado = p.idgalpon1 if p.culminacion1 == '1' else p.idgalpon2 if p.culminacion2 == '1' else None
+
+            # Inicializamos el diccionario de estadísticas para cada galpón
             for g in [g1, g2]:
                 if not g:
                     continue
                 if g.pk not in galpon_stats:
                     galpon_stats[g.pk] = {
                         'galpon': g,
-                        'pg': 0,
-                        'pe': 0,
-                        'pp': 0,
-                        'puntaje': 0,
-                        'tiempo': timedelta(0),
+                        'pg': 0,  # Victorias
+                        'pe': 0,  # Empates
+                        'pp': 0,  # Perdidas
+                        'puntaje': 0,  # Puntaje
+                        'tiempo': timedelta(0),  # Tiempo acumulado
                     }
 
             if p.duracion:
@@ -445,24 +462,23 @@ class RankingView(APIView):
                 if g2:
                     galpon_stats[g2.pk]['tiempo'] += p.duracion
 
-            # PG
+            # PG (Victorias)
             if resultado:
                 galpon_stats[resultado.pk]['pg'] += 1
 
-            # PE: empate (culminacion1 o culminacion2 == '2') y no ganó
+            # PE (Empates)
             empate = p.culminacion1 == '2' or p.culminacion2 == '2'
             if empate:
                 if g1 and resultado != g1:
-                    galpon_stats[g1.id]['pe'] += 1
+                    galpon_stats[g1.pk]['pe'] += 1
                 if g2 and resultado != g2:
-                    galpon_stats[g2.id]['pe'] += 1
+                    galpon_stats[g2.pk]['pe'] += 1
 
-        # Calcular PP y puntaje
+        # Calcular PP (Perdidas) y puntaje
         for stats in galpon_stats.values():
             galpon = stats['galpon']
             total_participaciones = ParticipacionGallos.objects.filter(
-                Q(idgallo1__in=galpon.galpon_gallos.values_list('idgallo', flat=True)) |
-                Q(idgallo2__in=galpon.galpon_gallos.values_list('idgallo', flat=True))
+                Q(idgalpon1=galpon) | Q(idgalpon2=galpon)
             ).count()
             stats['pp'] = total_participaciones - stats['pg'] - stats['pe']
             stats['puntaje'] = stats['pg'] * 3 + stats['pe']
@@ -473,6 +489,7 @@ class RankingView(APIView):
             key=lambda x: (-x['puntaje'], x['tiempo'])
         )
 
+        # Formateamos la respuesta
         response_data = []
         for idx, item in enumerate(ranking, start=1):
             galpon = item['galpon']
@@ -489,3 +506,155 @@ class RankingView(APIView):
             })
 
         return Response(response_data)
+
+
+from rest_framework.decorators import api_view
+@api_view(['POST'])
+def asignar_gallos_a_galpon(request):
+    ids_gallos = request.data.get('ids_gallos')
+    id_galpon = request.data.get('id_galpon')
+
+    if not ids_gallos or not id_galpon:
+        return Response({'error': 'Faltan parámetros'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        galpon = Galpon.objects.get(pk=id_galpon)
+    except Galpon.DoesNotExist:
+        return Response({'error': 'Galpón no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+    gallos_actualizados = Gallos.objects.filter(idgallo__in=ids_gallos, eliminado=0)
+    updated_count = gallos_actualizados.update(idgalpon=galpon)
+
+    return Response({
+        'mensaje': f'Se actualizaron {updated_count} gallos al galpón {galpon.idgalpon}.'
+    }, status=status.HTTP_200_OK)
+    
+
+
+import random
+import itertools
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Evento, GalponFiesta, GalponGalloFiesta, Gallos, ParticipacionGallos
+
+@api_view(['POST'])
+def asignar_vs_por_experiencia_aleatoria(request):
+    idevento = request.data.get('idevento')
+    id_galpones = request.data.get('id_galpones')
+
+    if not idevento or not id_galpones:
+        return Response({'error': 'Faltan parámetros.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        evento = Evento.objects.get(pk=idevento)
+    except Evento.DoesNotExist:
+        return Response({'error': 'Evento no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+    idfiesta = evento.idfiesta_id
+
+    galpones_inscritos = GalponFiesta.objects.filter(idfiesta=idfiesta, idgalpon__in=id_galpones)
+    if galpones_inscritos.count() != len(id_galpones):
+        return Response({'error': 'Uno o más galpones no están inscritos en la fiesta.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    gallos_data = []
+    for gf in galpones_inscritos:
+        gallos_fiesta = GalponGalloFiesta.objects.filter(idgalponfiesta=gf).select_related('idgallo')
+        for g in gallos_fiesta:
+            gallos_data.append({
+                'idgallo': g.idgallo.idgallo,
+                'experiencia': g.idgallo.experiencia,
+                'idgalpon': gf.idgalpon_id
+            })
+
+    if len(gallos_data) % 2 != 0:
+        return Response({'error': 'Número impar de gallos. No se puede asignar VS.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Randomizar gallos dentro del margen de experiencia
+    gallos_data.sort(key=lambda g: g['experiencia'])
+
+    # Randomizar dentro del margen de ±1
+    gallos_aleatorios = []
+    for galpon in set(g['idgalpon'] for g in gallos_data):
+        gallos_del_galpon = [g for g in gallos_data if g['idgalpon'] == galpon]
+        random.shuffle(gallos_del_galpon)  # Aleatorizamos dentro del galpón
+        gallos_aleatorios.extend(gallos_del_galpon)
+
+    # Buscar pares de gallos con experiencia similar (±1)
+    vs_generados = []
+    usados = set()
+
+    for i, g1 in enumerate(gallos_aleatorios):
+        if g1['idgallo'] in usados:
+            continue
+        for j in range(i + 1, len(gallos_aleatorios)):
+            g2 = gallos_aleatorios[j]
+            if g2['idgallo'] in usados:
+                continue
+            # Diferente galpón y experiencia similar (por ejemplo, ±1)
+            if g1['idgalpon'] != g2['idgalpon'] and abs(g1['experiencia'] - g2['experiencia']) <= 1:
+                vs_generados.append({
+                    'idgallo1': g1['idgallo'],
+                    'idgallo2': g2['idgallo'],
+                    'idevento': idevento,
+                    'idgalpon1': g1['idgalpon'],
+                    'idgalpon2': g2['idgalpon'],
+                })
+                usados.add(g1['idgallo'])
+                usados.add(g2['idgallo'])
+                break
+
+    # Si hay gallos no emparejados, intentar asignarles la experiencia más cercana
+    gallos_no_emparejados = [g for g in gallos_aleatorios if g['idgallo'] not in usados]
+    if gallos_no_emparejados:
+        for g in gallos_no_emparejados:
+            # Buscar el gallo con la experiencia más cercana para emparejarlo
+            gallo_con_menor_diferencia = None
+            menor_diferencia = float('inf')
+            for g2 in gallos_no_emparejados:
+                if g != g2 and abs(g['experiencia'] - g2['experiencia']) < menor_diferencia:
+                    menor_diferencia = abs(g['experiencia'] - g2['experiencia'])
+                    gallo_con_menor_diferencia = g2
+
+            if gallo_con_menor_diferencia:
+                vs_generados.append({
+                    'idgallo1': g['idgallo'],
+                    'idgallo2': gallo_con_menor_diferencia['idgallo'],
+                    'idevento': idevento,
+                    'idgalpon1': g['idgalpon'],
+                    'idgalpon2': gallo_con_menor_diferencia['idgalpon'],
+                })
+                usados.add(g['idgallo'])
+                usados.add(gallo_con_menor_diferencia['idgallo'])
+                gallos_no_emparejados.remove(gallo_con_menor_diferencia)
+
+    # Si no se pudieron emparejar todos, mostrar mensaje de los gallos que no fueron emparejados
+    if len(usados) != len(gallos_data):
+        gallos_restantes = [g['idgallo'] for g in gallos_no_emparejados]
+        return Response({
+            'error': 'No se pudo emparejar a todos los gallos. Algunos fueron emparejados con la experiencia más cercana.',
+            'gallos_no_emparejados': gallos_restantes
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Guardar en la base de datos
+    for vs in vs_generados:
+        # Obtener las instancias de los gallos usando el ID
+        idgallo1_instance = Gallos.objects.get(idgallo=vs['idgallo1'])
+        idgallo2_instance = Gallos.objects.get(idgallo=vs['idgallo2'])
+        idgalpon1_instance = Galpon.objects.get(idgalpon=vs['idgalpon1'])
+        idgalpon2_instance = Galpon.objects.get(idgalpon=vs['idgalpon2'])
+
+        # Crear la participación
+        ParticipacionGallos.objects.create(
+            idgallo1=idgallo1_instance,
+            idgallo2=idgallo2_instance,
+            idevento=evento,
+            idgalpon1=idgalpon1_instance,
+            idgalpon2=idgalpon2_instance,
+        )
+
+    return Response({
+        'mensaje': f'{len(vs_generados)} enfrentamientos generados con éxito.',
+        'gallos_emparejados': vs_generados
+    }, status=status.HTTP_201_CREATED)
