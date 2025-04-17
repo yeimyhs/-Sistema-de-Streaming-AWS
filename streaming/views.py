@@ -97,7 +97,7 @@ class DuenioViewSet(ModelViewSet):
 class GalponViewSet(ModelViewSet):
     queryset = Galpon.objects.order_by('pk')
     serializer_class = GalponSerializer
-    filterset_fields = ['titulo', 'idduenio', 'estado']
+    filterset_fields = ['titulo', 'idduenio', 'estado', 'pais']
     search_fields = ['titulo', 'descripcion']
     
 class FiestaViewSet(ModelViewSet):

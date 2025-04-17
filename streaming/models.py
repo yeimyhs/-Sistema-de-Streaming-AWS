@@ -144,6 +144,7 @@ class Galpon(models.Model):
     eliminado = models.SmallIntegerField(default = 0)
     # Campos adicionales
     titulo = models.CharField(max_length=128)
+    pais = models.CharField(max_length=128,blank=True, null=True)
     descripcion = models.TextField()
     
     fechacreacion = models.DateTimeField(auto_now_add=True)
