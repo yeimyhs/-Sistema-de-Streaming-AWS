@@ -286,7 +286,7 @@ class GalponSerializerConGallos(serializers.ModelSerializer):
 
     class Meta:
         model = Galpon
-        fields = ['idgalpon', 'titulo', 'gallos', 'iddueniodetalle']
+        fields = ['idgalpon', 'titulo', 'fechacreacion', 'descripcion', 'pais', 'gallos', 'iddueniodetalle']
 
     def get_gallos(self, obj):
         fiesta = self.context.get('fiesta')
