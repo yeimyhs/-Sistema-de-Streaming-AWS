@@ -216,6 +216,13 @@ class EventoSerializer(ModelSerializer):
         serializer = ParticipacionGallosSerializer(participaciones, many=True)
         return serializer.data
 
+class OnlyEventoSerializer(ModelSerializer):
+
+    class Meta:
+        model = Evento
+        fields = '__all__'
+
+
 
 class OnlyGalponSerializer(ModelSerializer):
     iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True) 
@@ -376,6 +383,7 @@ class ParticipacionGallosSerializer(serializers.ModelSerializer):
     galpon2_detalle_completo = serializers.SerializerMethodField()
     gallo1detalle = OnlyGalloSerializer(source='idgallo1', read_only=True)
     gallo2detalle = OnlyGalloSerializer(source='idgallo2', read_only=True)
+    eventodetalle = OnlyEventoSerializer(source='idevento', read_only=True)
 
     class Meta:
         model = ParticipacionGallos
