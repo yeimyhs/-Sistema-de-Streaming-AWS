@@ -286,35 +286,40 @@ class OnlyGalloSerializer(serializers.ModelSerializer):
         model = Gallos
         fields = ['idgallo', 'nombre']
 
-class GalloConGalponFiestaSerializer(serializers.Serializer):
+class GalponGallodetFiestaSerializer(serializers.ModelSerializer):
     gallo = OnlyGalloSerializer(source='idgallo', read_only=True)
-    idgalponfiesta = serializers.IntegerField(source='idgalponfiesta.idgalponfiesta', read_only=True)
- 
+
+    class Meta:
+        model = GalponGalloFiesta
+        fields = ['idgalponfiesta', 'gallo']
 
 class GalponSerializerConGallos(serializers.ModelSerializer):
+    iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True)
+    idgalponfiesta = serializers.SerializerMethodField()
     gallos = serializers.SerializerMethodField()
-    iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True) 
 
     class Meta:
         model = Galpon
-        fields = ['idgalpon', 'titulo', 'fechacreacion', 'descripcion', 'pais', 'gallos', 'iddueniodetalle']
+        fields = ['idgalpon', 'titulo', 'fechacreacion', 'descripcion', 'pais', 'idgalponfiesta', 'gallos', 'iddueniodetalle']
+
+    def get_idgalponfiesta(self, obj):
+        fiesta = self.context.get('fiesta')
+        if not fiesta:
+            return None
+        galpon_fiesta = GalponFiesta.objects.filter(idgalpon=obj, idfiesta=fiesta).first()
+        return galpon_fiesta.idgalponfiesta if galpon_fiesta else None
 
     def get_gallos(self, obj):
         fiesta = self.context.get('fiesta')
         if not fiesta:
             return []
-
-        try:
-            galpon_fiesta = GalponFiesta.objects.get(idgalpon=obj, idfiesta=fiesta)
-        except GalponFiesta.DoesNotExist:
+        galpon_fiesta = GalponFiesta.objects.filter(idgalpon=obj, idfiesta=fiesta).first()
+        if not galpon_fiesta:
             return []
-
-        inscritos = GalponGalloFiesta.objects.filter(
-            idgalponfiesta=galpon_fiesta
-        ).select_related('idgallo')
-
-        return GalponGallodetalleFiestaSerializer(inscritos, many=True).data
-
+        inscritos = GalponGalloFiesta.objects.filter(idgalponfiesta=galpon_fiesta).select_related('idgallo')
+        gallos = [inscrito.idgallo for inscrito in inscritos]
+        return OnlyGalloSerializer(gallos, many=True).data
+    
 class FiestaSerializer(ModelSerializer):
     galpones = serializers.SerializerMethodField()    
     eventos = serializers.SerializerMethodField()
