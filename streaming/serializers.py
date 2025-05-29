@@ -374,6 +374,8 @@ class GalponConGallosSerializer(serializers.ModelSerializer):
 class ParticipacionGallosSerializer(serializers.ModelSerializer):
     galpon1_detalle_completo = serializers.SerializerMethodField()
     galpon2_detalle_completo = serializers.SerializerMethodField()
+    gallodetalle = OnlyGalloSerializer(source='idgallo1', read_only=True)
+    gallodetalle = OnlyGalloSerializer(source='idgallo2', read_only=True)
 
     class Meta:
         model = ParticipacionGallos
