@@ -291,7 +291,7 @@ class GalponGallodetFiestaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GalponGalloFiesta
-        fields = ['idgalponfiesta', 'gallo']
+        fields = ['idgalpongallofiesta','idgalponfiesta', 'gallo']
 
 class GalponSerializerConGallos(serializers.ModelSerializer):
     iddueniodetalle = DuenioSerializer(source='idduenio', read_only=True)
@@ -317,8 +317,8 @@ class GalponSerializerConGallos(serializers.ModelSerializer):
         if not galpon_fiesta:
             return []
         inscritos = GalponGalloFiesta.objects.filter(idgalponfiesta=galpon_fiesta).select_related('idgallo')
-        gallos = [inscrito.idgallo for inscrito in inscritos]
-        return OnlyGalloSerializer(gallos, many=True).data
+        return GalponGallodetFiestaSerializer(inscritos, many=True).data
+
     
 class FiestaSerializer(ModelSerializer):
     galpones = serializers.SerializerMethodField()    
