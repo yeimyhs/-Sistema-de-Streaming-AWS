@@ -30,6 +30,8 @@ urlpatterns = [
     path("iniciar-stream/", views.iniciar_canal_view, name="iniciar-stream"),
     path("detener-stream/", views.detener_canal_view, name="detener-stream"),
     
+    
+    path('emparejar-fiesta/<int:idfiesta>/', views.generar_emparejamientos, name='generar-emparejamientos'),
 ]
 router.register(r'duenio', views.DuenioViewSet, 'Duenio')
 router.register(r'carrusel', views.CarruselViewSet, 'Carrusel')

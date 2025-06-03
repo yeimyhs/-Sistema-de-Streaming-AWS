@@ -658,3 +658,98 @@ def asignar_vs_por_experiencia_aleatoria(request):
         'mensaje': f'{len(vs_generados)} enfrentamientos generados con éxito.',
         'gallos_emparejados': vs_generados
     }, status=status.HTTP_201_CREATED)
+
+
+
+
+from django.db import transaction
+from .models import (
+    Fiesta, Evento, Gallos, GalponFiesta,
+    GalponGalloFiesta, ParticipacionGallos
+)
+import random
+from collections import defaultdict
+
+@transaction.atomic
+def asignar_versus_por_fiesta(idfiesta):
+    # 1. Obtener eventos de la fiesta
+    eventos = list(Evento.objects.filter(idfiesta_id=idfiesta, eliminado=0))
+    if not eventos:
+        raise Exception("La fiesta no tiene eventos activos")
+
+    # 2. Obtener gallos de la fiesta y su galpón
+    inscripciones = GalponGalloFiesta.objects.filter(
+        idgalponfiesta__idfiesta_id=idfiesta,
+        eliminado=0
+    ).select_related('idgallo', 'idgalponfiesta__idgalpon')
+
+    gallos_info = []
+    for ins in inscripciones:
+        gallos_info.append({
+            'gallo': ins.idgallo,
+            'galpon_id': ins.idgalponfiesta.idgalpon.id,
+            'experiencia': ins.idgallo.experiencia
+        })
+
+    # 3. Agrupar por nivel de experiencia
+    experiencia_niveles = defaultdict(list)
+    for info in gallos_info:
+        exp = info['experiencia']
+        if exp >= 10:
+            experiencia_niveles['alta'].append(info)
+        elif exp >= 4:
+            experiencia_niveles['media'].append(info)
+        else:
+            experiencia_niveles['baja'].append(info)
+
+    # 4. Emparejar por niveles, evitando gallos del mismo galpón
+    emparejamientos = []
+
+    def emparejar_grupo(gallos_grupo):
+        random.shuffle(gallos_grupo)
+        emparejados = []
+        usados = set()
+        for i, g1 in enumerate(gallos_grupo):
+            if i in usados:
+                continue
+            for j in range(i+1, len(gallos_grupo)):
+                g2 = gallos_grupo[j]
+                if j in usados:
+                    continue
+                if g1['galpon_id'] != g2['galpon_id']:
+                    emparejados.append((g1, g2))
+                    usados.update([i, j])
+                    break
+        no_emparejados = [g for idx, g in enumerate(gallos_grupo) if idx not in usados]
+        return emparejados, no_emparejados
+
+    niveles = ['alta', 'media', 'baja']
+    pendientes = []
+    for i, nivel in enumerate(niveles):
+        grupo = experiencia_niveles[nivel] + pendientes
+        parejas, pendientes = emparejar_grupo(grupo)
+        emparejamientos.extend(parejas)
+
+    # 5. Repartir emparejamientos entre eventos
+    eventos_cycle = eventos * ((len(emparejamientos) // len(eventos)) + 1)
+    eventos_cycle = eventos_cycle[:len(emparejamientos)]
+
+    for (g1, g2), evento in zip(emparejamientos, eventos_cycle):
+        ParticipacionGallos.objects.create(
+            idgallo1=g1['gallo'],
+            idgallo2=g2['gallo'],
+            idevento=evento,
+            idgalpon1_id=g1['galpon_id'],
+            idgalpon2_id=g2['galpon_id'],
+        )
+
+    return f"Se asignaron {len(emparejamientos)} peleas a {len(eventos)} eventos."
+
+
+@api_view(['POST'])
+def generar_emparejamientos(request, idfiesta):
+    try:
+        resultado = asignar_versus_por_fiesta(idfiesta)
+        return Response({'mensaje': resultado}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
