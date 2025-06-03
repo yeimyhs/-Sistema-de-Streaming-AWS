@@ -747,9 +747,9 @@ def asignar_versus_por_fiesta(idfiesta):
 
 
 @api_view(['POST'])
-def generar_emparejamientos(request, idfiesta):
+def generar_emparejamientos(request, pk):
     try:
-        resultado = asignar_versus_por_fiesta(idfiesta)
+        resultado = asignar_versus_por_fiesta(pk)
         return Response({'mensaje': resultado}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
