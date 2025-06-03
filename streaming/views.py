@@ -687,7 +687,7 @@ def asignar_versus_por_fiesta(idfiesta):
     for ins in inscripciones:
         gallos_info.append({
             'gallo': ins.idgallo,
-            'galpon_id': ins.idgalponfiesta.idgalpon.id,
+            'galpon_id': ins.idgalponfiesta.idgalpon.idgalpon,
             'experiencia': ins.idgallo.experiencia
         })
 
