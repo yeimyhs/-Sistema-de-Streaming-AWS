@@ -1,23 +1,57 @@
 # This is an auto-generated Django model module.
 # You'll have to do the following manually to clean this up:
 #   * Rearrange models' order
-#   * Make sure each model has one field BigAutoField primary_key=True
+#   * Make sure each model has one field with primary_key=True
 #   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
 #   * Remov` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
-
-
-
 
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
+from django.db import models
 
+class SoftDeleteQuerySet(models.QuerySet):
+    def reactivate(self):
+        """Reactivar un curso desafío eliminado."""
+        self.eliminado = False
+        self.save()
+        
+    def delete(self):
+        """Borrado lógico en consultas bulk."""
+        return super().update(eliminado=1)
 
-class Estado(models.Model):
+    def alive(self):
+        """Filtrar solo registros no eliminados."""
+        return self.filter(eliminado=0)
+
+class SoftDeleteManager(models.Manager):
+    def get_queryset(self):
+        """Excluye los registros eliminados por defecto."""
+        return SoftDeleteQuerySet(self.model, using=self._db).filter(eliminado=0)
+
+class SoftDeleteModel(models.Model):
+    eliminado = models.SmallIntegerField(default=0)
+
+    objects = SoftDeleteManager()  # Solo registros no eliminados
+    all_objects = models.Manager()  # Muestra todos, incluso eliminados
+
+    class Meta:
+        abstract = True
+
+    def delete(self, using=None, keep_parents=False):
+        """Borrado lógico individual."""
+        self.eliminado = 1
+        self.save()
+
+    @classmethod
+    def delete_bulk(cls, queryset):
+        """Borrado lógico en consultas bulk."""
+        queryset.update(eliminado=1)
+class Estado(SoftDeleteModel):
     nombre_tabla = models.CharField(max_length=255, help_text="Nombre de la tabla a la que pertenece este estado")
     identificador_tabla = models.CharField(max_length=255, help_text="Identificador único del registro dentro de la tabla")
     descripcion = models.CharField(max_length=255)
@@ -78,7 +112,6 @@ class CustomUser(AbstractUser):
     telefono = models.CharField(max_length=20, blank=True, null=True)
     fotoperfil = models.ImageField(upload_to='perfilUsuarioimagen/', blank=True, null=True)
     estado = models.IntegerField()
-    eliminado = models.BooleanField(default = 0)
     
     pais = models.CharField(max_length=128, blank=True, null=True)
     ciudad = models.CharField(max_length=128, blank=True, null=True)
@@ -103,9 +136,8 @@ class CustomUser(AbstractUser):
 
 #-------------------------------------------------------------------------------------------------------------user
 
-class Duenio(models.Model):
+class Duenio(SoftDeleteModel):
     idduenio = models.BigAutoField(primary_key=True)
-    eliminado = models.SmallIntegerField(default = 0)
     # Campos adicionales
     nombres = models.CharField(max_length=128)
     apellidos = models.CharField(max_length=128, blank=True, null=True)
@@ -121,8 +153,7 @@ class Duenio(models.Model):
         
         
         
-class Fiesta(models.Model):
-    eliminado = models.SmallIntegerField(default = 0)
+class Fiesta(SoftDeleteModel):
     idfiesta = models.BigAutoField(primary_key=True)
     titulo = models.CharField(max_length=128)
     descripcion = models.TextField()
@@ -138,10 +169,9 @@ class Fiesta(models.Model):
     class Meta:
         db_table = 'Fiesta'
         
-class Galpon(models.Model):
+class Galpon(SoftDeleteModel):
     idgalpon = models.BigAutoField(primary_key=True)
     idduenio = models.ForeignKey(Duenio, models.DO_NOTHING, db_column='idduenio')
-    eliminado = models.SmallIntegerField(default = 0)
     # Campos adicionales
     titulo = models.CharField(max_length=128)
     pais = models.CharField(max_length=128,blank=True, null=True)
@@ -158,8 +188,7 @@ class Galpon(models.Model):
 
 
 
-class Carrusel(models.Model):
-    eliminado = models.SmallIntegerField(default = 0)
+class Carrusel(SoftDeleteModel):
     titulo = models.CharField(max_length=128)
     descripcion = models.TextField()
     imagen = models.ImageField(upload_to='carrusel/', blank=True, null=True)
@@ -173,8 +202,7 @@ class Carrusel(models.Model):
         db_table = 'Carrusel'
 
 
-class Comentario(models.Model):
-    eliminado = models.SmallIntegerField(default = 0)
+class Comentario(SoftDeleteModel):
     idusuario = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='idusuario')
     comentario = models.TextField()
     idcomentario = models.BigAutoField(primary_key=True)
@@ -187,8 +215,7 @@ class Comentario(models.Model):
         db_table = 'Comentario'
 
 
-class Configuracion(models.Model):
-    eliminado = models.SmallIntegerField(default = 0)
+class Configuracion(SoftDeleteModel):
     idconf = models.BigAutoField(primary_key=True)
     nombreweb = models.CharField(max_length=128)
     correo = models.CharField(max_length=128)
@@ -206,8 +233,7 @@ class Configuracion(models.Model):
         db_table = 'Configuracion'
 
 
-class Evento(models.Model):
-    eliminado = models.SmallIntegerField(default = 0)
+class Evento(SoftDeleteModel):
     idevento = models.BigAutoField(primary_key=True)
     titulo = models.CharField(max_length=128)
     descripcion = models.TextField()
@@ -224,8 +250,7 @@ class Evento(models.Model):
         db_table = 'Evento'
 
 
-class Gallos(models.Model):
-    eliminado = models.SmallIntegerField(default = 0)
+class Gallos(SoftDeleteModel):
     nombre = models.CharField(max_length=128)
     peso = models.FloatField(blank=True, null=True)
     color = models.CharField(max_length=128,blank=True, null=True)
@@ -243,8 +268,7 @@ class Gallos(models.Model):
         db_table = 'Gallos'
 
 
-class Streaming(models.Model):
-    eliminado = models.SmallIntegerField(default = 0)
+class Streaming(SoftDeleteModel):
     idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento', blank=True, null=True)
     urlgrabacion = models.TextField( blank=True, null=True)
     nombrevideolife = models.TextField()
@@ -255,7 +279,7 @@ class Streaming(models.Model):
 
 
 
-class ParticipacionGallos(models.Model):
+class ParticipacionGallos(SoftDeleteModel):
     CULMINACION_OPCIONES = [
     ("0", "Muerto"),
     ("1", "Tumbado"),
@@ -263,7 +287,6 @@ class ParticipacionGallos(models.Model):
     ("3", "Anulado"),
     ]
     idparticipacion = models.BigAutoField(primary_key=True)
-    eliminado = models.SmallIntegerField(default = 0)
     idgallo1 = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo1', related_name='combates_como_gallo1')
     idgallo2 = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo2',related_name='combates_como_gallo2')
     idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento', related_name='evento_gallos_vs')
@@ -280,9 +303,8 @@ class ParticipacionGallos(models.Model):
         db_table = 'participacion_gallos'
 
 
-class RegistroFiesta(models.Model):
+class RegistroFiesta(SoftDeleteModel):
     idregistro = models.BigAutoField(primary_key=True)
-    eliminado = models.SmallIntegerField(default = 0)
     voucher = models.ImageField(upload_to='pagos/', blank=True, null=True)
     estado = models.IntegerField()
     idfiesta = models.ForeignKey(Fiesta, models.DO_NOTHING, db_column='idfiesta')
@@ -294,18 +316,16 @@ class RegistroFiesta(models.Model):
         unique_together = (('idfiesta', 'idusuario'),)
 
 
-#class GalponGallos(models.Model):
+#class GalponGallos(SoftDeleteModel):
 #    idgalpongallos = models.BigAutoField(primary_key=True)
-#    eliminado = models.SmallIntegerField(default = 0)
 #    idgallo = models.ForeignKey(Gallos, models.DO_NOTHING, db_column='idgallo', related_name = 'gallo_galpondetalle')
 #    idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon', related_name='galpon_gallos')
 
 #    class Meta:
 #        db_table = 'galpon_gallos'
         
-class GalponFiesta(models.Model):
+class GalponFiesta(SoftDeleteModel):
     idgalponfiesta = models.BigAutoField(primary_key=True)
-    eliminado = models.SmallIntegerField(default = 0)
     idfiesta = models.ForeignKey(Fiesta, models.DO_NOTHING, db_column='idfiesta')
     idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon')
 
@@ -313,9 +333,8 @@ class GalponFiesta(models.Model):
         db_table = 'galpon_fiesta'
         
         
-class GalponGalloFiesta(models.Model):
+class GalponGalloFiesta(SoftDeleteModel):
     idgalpongallofiesta = models.BigAutoField(primary_key=True)
-    eliminado = models.SmallIntegerField(default = 0)
     idgalponfiesta = models.ForeignKey(GalponFiesta, models.DO_NOTHING, related_name='idgalponfiesta_inscripcion')
     idgallo = models.ForeignKey(Gallos, models.DO_NOTHING, related_name='idgallo_galpon_fiesta_inscripcion')
 
