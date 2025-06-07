@@ -122,6 +122,7 @@ class CustomUser(AbstractUser):
 
     # Especificar que el campo para autenticar es `nombreusuario`
     USERNAME_FIELD = 'email'
+    eliminado = models.SmallIntegerField(default=0)
     
     # Campos requeridos adicionales (no necesitas username ya que lo has reemplazado con nombreusuario)
     REQUIRED_FIELDS = ['nombres']  # En Django, `email` es un campo por defecto si lo estás usando como required

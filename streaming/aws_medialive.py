@@ -10,7 +10,7 @@ AWS_REGION = settings.AWS_REGION
 AWS_MEDIALIVE_ROLE_ARN = settings.AWS_MEDIALIVE_ROLE_ARN
 BUCKET_NAME = "streaming-gallos-bucket"  # Reemplaza con tu bucket de S3
 CLOUDFRONT_DOMAIN = "d17y4wxxn3lf6q.cloudfront.net"  # Tu dominio de CloudFront
-
+AWS_MEDIALIVE_SECURITY_GROUP = settings.AWS_MEDIALIVE_SECURITY_GROUP
 # Inicializar cliente de MediaLive
 client = boto3.client(
     "medialive",
@@ -34,7 +34,7 @@ def crear_canal_medialive(nombre_canal):
         input_response = client.create_input(
             Name="MiEntradaLive",
             Type="RTMP_PUSH",
-            InputSecurityGroups=["3471356"],  # Reemplazar con el ID correcto
+            InputSecurityGroups=[AWS_MEDIALIVE_SECURITY_GROUP],  # Reemplazar con el ID correcto
             Destinations=[
                 {"StreamName": f"{nombre_canal}"},
                 {"StreamName": f"{nombre_canal}"}
@@ -262,3 +262,50 @@ def mover_grabacion_a_nueva_ubicacion(canal_id, nombre_canal, nombrestreming):
     except Exception as e:
         logger.error(f"Error al mover la grabación: {str(e)}")
         raise e
+
+import time
+def eliminar_todos_canales_y_entradas():
+    try:
+        # 1️⃣ Detener todos los canales
+        canales = client.list_channels().get('Channels', [])
+        for canal in canales:
+            canal_id = canal['Id']
+            estado = canal.get('State')
+            if estado == 'RUNNING':
+                client.stop_channel(ChannelId=canal_id)
+                waiter = client.get_waiter('channel_stopped')
+                waiter.wait(ChannelId=canal_id)
+
+        # 2️⃣ Eliminar todos los canales
+        for canal in canales:
+            client.delete_channel(ChannelId=canal['Id'])
+
+        # 🕒 Esperar unos segundos a que AWS libere las entradas
+        time.sleep(10)
+
+        # 3️⃣ Eliminar todas las entradas
+        entradas = client.list_inputs().get('Inputs', [])
+        for entrada in entradas:
+            input_id = entrada['Id']
+            try:
+                client.delete_input(InputId=input_id)
+                logger.info(f"Entrada {input_id} eliminada correctamente")
+            except Exception as e:
+                logger.warning(f"No se pudo eliminar entrada {input_id} (primer intento): {str(e)}")
+
+        # 4️⃣ Reintentar después de esperar un poco más
+        time.sleep(5)
+        entradas_restantes = client.list_inputs().get('Inputs', [])
+        for entrada in entradas_restantes:
+            input_id = entrada['Id']
+            try:
+                client.delete_input(InputId=input_id)
+                logger.info(f"Entrada {input_id} eliminada en segundo intento")
+            except Exception as e:
+                logger.error(f"No se pudo eliminar entrada {input_id} ni en segundo intento: {str(e)}")
+
+        return True, "Todos los canales y entradas fueron eliminados (incluidos reintentos)"
+
+    except Exception as e:
+        logger.error(f"Error al eliminar recursos: {str(e)}")
+        return False, str(e)

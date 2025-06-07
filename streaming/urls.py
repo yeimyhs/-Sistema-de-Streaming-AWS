@@ -29,7 +29,7 @@ urlpatterns = [
     path("listar-stream/", views.listar_stream, name="listar-stream"),
     path("iniciar-stream/", views.iniciar_canal_view, name="iniciar-stream"),
     path("detener-stream/", views.detener_canal_view, name="detener-stream"),
-    
+    path("entradas/eliminar-todo/", views.eliminar_recursos_medialive, name="eliminar_medialive"),
     
     path('emparejar-fiesta/<int:pk>/', views.generar_emparejamientos, name='generar-emparejamientos'),
 ]

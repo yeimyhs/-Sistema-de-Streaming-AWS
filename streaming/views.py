@@ -385,8 +385,19 @@ def detener_canal_view(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+from django.views.decorators.http import require_http_methods
 
 
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def eliminar_recursos_medialive(request):
+    success, mensaje = aws_medialive.eliminar_todos_canales_y_entradas()
+
+    if success:
+        return JsonResponse({"message": mensaje}, status=200)
+    else:
+        return JsonResponse({"error": mensaje}, status=500)
 
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -734,6 +745,8 @@ def asignar_versus_por_fiesta(idfiesta):
     eventos_cycle = eventos * ((len(emparejamientos) // len(eventos)) + 1)
     eventos_cycle = eventos_cycle[:len(emparejamientos)]
 
+    lista_parejas = []  # <-- Aquí se almacenarán los resultados para retornar
+
     for (g1, g2), evento in zip(emparejamientos, eventos_cycle):
         ParticipacionGallos.objects.create(
             idgallo1=g1['gallo'],
@@ -742,9 +755,18 @@ def asignar_versus_por_fiesta(idfiesta):
             idgalpon1_id=g1['galpon_id'],
             idgalpon2_id=g2['galpon_id'],
         )
+        lista_parejas.append({
+            'evento': evento.titulo,
+            'gallo1': g1['gallo'].nombre,
+            'galpon1': g1['galpon_id'],
+            'gallo2': g2['gallo'].nombre,
+            'galpon2': g2['galpon_id'],
+        })
 
-    return f"Se asignaron {len(emparejamientos)} peleas a {len(eventos)} eventos."
-
+    return {
+        'mensaje': f"Se asignaron {len(emparejamientos)} peleas a {len(eventos)} eventos.",
+        'parejas': lista_parejas
+    }
 
 @api_view(['POST'])
 def generar_emparejamientos(request, pk):
