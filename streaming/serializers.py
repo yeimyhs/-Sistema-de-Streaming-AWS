@@ -423,10 +423,15 @@ class ParticipacionGallosSerializer(serializers.ModelSerializer):
 class RegistroFiestaSerializer(ModelSerializer):
     fiestadetalle = OnlyFiestaSerializer(source='idfiesta', read_only=True) 
     userdetalle = CustomUserSerializer(source='idusuario', read_only=True) 
-
+    streamings = serializers.SerializerMethodField()
     class Meta:
         model = RegistroFiesta
         fields = '__all__'
+    
+    def get_streamings(self, obj):
+        eventos = obj.idfiesta.eventos.all()  # gracias a related_name="eventos"
+        streamings = Streaming.objects.filter(idevento__in=eventos)
+        return StreamingSerializer(streamings, many=True).data
 
 class EstadoSerializer(ModelSerializer):
 

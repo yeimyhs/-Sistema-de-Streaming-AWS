@@ -171,9 +171,15 @@ class ParticipacionGallosViewSet(ModelViewSet):
     filterset_fields = ['idgallo1', 'idgallo2','idevento', 'culminacion1', 'culminacion2', 'idgalpon1','idgalpon2','idgalponganador','idgalponperdedor' ]
     search_fields = []
 
-
+from django.db.models import Prefetch
 class RegistroFiestaViewSet(ModelViewSet):
-    queryset = RegistroFiesta.objects.order_by('pk')
+    queryset = RegistroFiesta.objects.prefetch_related(
+        Prefetch(
+            'idfiesta__eventos__streaming_set',
+            queryset=Streaming.objects.all()
+        ),
+        'idfiesta__eventos'
+    ).select_related('idfiesta', 'idusuario')
     serializer_class = RegistroFiestaSerializer
     filterset_fields = ['idfiesta', 'idusuario', 'estado']
     search_fields = []
@@ -393,12 +399,23 @@ from django.views.decorators.http import require_http_methods
 @require_http_methods(["DELETE"])
 def eliminar_recursos_medialive(request):
     success, mensaje = aws_medialive.eliminar_todos_canales_y_entradas()
-
     if success:
-        return JsonResponse({"message": mensaje}, status=200)
+        try:
+            configuracion = Configuracion.objects.first()
+            if configuracion:
+                configuracion.estadostreaming = None
+                configuracion.channel_id = None
+                configuracion.urlinput1 = None
+                configuracion.urlinput2 = None
+                configuracion.urloutput = None
+                configuracion.nombrecanal = None
+                configuracion.save()
+
+            return JsonResponse({"message": "Canales eliminados y configuración actualizada."}, status=200)
+        except Exception as e:
+            return JsonResponse({"error": f"Error al limpiar configuración: {str(e)}"}, status=500)
     else:
         return JsonResponse({"error": mensaje}, status=500)
-
 from django.http import JsonResponse
 from django.shortcuts import render
 from .consumers import encrypt_channel_name
