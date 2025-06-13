@@ -353,6 +353,11 @@ class StreamingSerializer(ModelSerializer):
         model = Streaming
         fields = '__all__'
 
+class StreamingEventoSerializer(ModelSerializer):
+    evento = EventoSerializer(source='idevento', read_only=True) 
+    class Meta:
+        model = Streaming
+        fields = '__all__'
 
 class UsuarioSerializer(ModelSerializer):
 
@@ -431,7 +436,7 @@ class RegistroFiestaSerializer(ModelSerializer):
     def get_streamings(self, obj):
         eventos = obj.idfiesta.eventos.all()  # gracias a related_name="eventos"
         streamings = Streaming.objects.filter(idevento__in=eventos)
-        return StreamingSerializer(streamings, many=True).data
+        return StreamingEventoSerializer(streamings, many=True).data
 
 class EstadoSerializer(ModelSerializer):
 
