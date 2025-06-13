@@ -434,13 +434,13 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
 
-def chat_view_commeffnt(request, streaming_id):
+def chat_view_comment(request, streaming_id):
     return render(request, 'comentario/chat.html', {
         'streaming_id': streaming_id,
-        'user_id': request.user.id if request.user.is_authenticated else 1  # user demo
+        'user_id': request.user.id if request.user.is_authenticated else 1  # usuario demo
     })
     
-def chat_view_comment(request):
+def sschat_view_comment(request):
     return render(request, 'comentario/chat.html')
 
 

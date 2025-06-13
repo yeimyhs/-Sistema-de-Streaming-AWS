@@ -21,7 +21,7 @@ urlpatterns = [
     path('asignar-vs-por-evento/', views.asignar_vs_por_experiencia_aleatoria, name='asignar-vs-por-evento'),
     
     path("chat/", views.chat_view, name="chat"),
-    path("streamcomentarios/", views.chat_view_comment, name="chats"),
+    path('chat/streaming/<int:streaming_id>/', views.chat_view_comment, name='chat_comentario'),
     
     
     path('channel/', views.CreateMediaLiveChannel.as_view(), name='create-medialive-channel'),

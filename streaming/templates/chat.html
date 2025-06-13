@@ -12,7 +12,7 @@
     <p id="messages"></p>
 
     <script>
-        const socket = new WebSocket("ws://localhost:8000/ws/chat/");
+        const socket = new WebSocket("ws://18.220.9.56/ws/chat/");
 
         socket.onopen = function() {
             document.getElementById("status").innerText = "Estado: Conectado ✅";

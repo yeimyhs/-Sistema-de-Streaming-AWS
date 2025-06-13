@@ -124,14 +124,18 @@ User = get_user_model()
 
 class ComentarioConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Aceptar la conexión WebSocket
+        self.idstreaming = self.scope["url_route"]["kwargs"]["idstreaming"]
+        self.group_name = f"streaming_{self.idstreaming}"
+        self.stream_groups = set()  # ✅ Esta línea es obligatoria
+        self.stream_groups.add(self.group_name)
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        self.stream_groups = set()
 
     async def disconnect(self, close_code):
-        # Salirse de todos los grupos a los que se unió
-        for group_name in self.stream_groups:
-            await self.channel_layer.group_discard(group_name, self.channel_name)
+        if hasattr(self, "stream_groups"):
+            for group_name in self.stream_groups:
+                await self.channel_layer.group_discard(group_name, self.channel_name)
+
 
     async def receive(self, text_data):
         data = json.loads(text_data)

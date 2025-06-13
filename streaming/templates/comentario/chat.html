@@ -1,52 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chat Básico en Tiempo Real</title>
+  <title>Prueba Comentario WebSocket</title>
 </head>
 <body>
-    <h2>Comentarios en tiempo real</h2>
+  <h2>Canal de comentarios (Streaming ID: 1)</h2>
 
-    <label>ID Usuario:</label><br>
-    <input type="number" id="idusuario"><br><br>
+  <label for="idusuario">ID Usuario:</label>
+  <input type="number" id="idusuario"><br>
 
-    <label>ID Streaming:</label><br>
-    <input type="number" id="idstreaming"><br><br>
+  <label for="comentario">Comentario:</label>
+  <input type="text" id="comentario">
+  <button onclick="enviarComentario()">Enviar</button>
 
-    <label>Comentario:</label><br>
-    <textarea id="mensaje" placeholder="Escribe tu comentario..."></textarea><br><br>
+  <h3>Mensajes recibidos:</h3>
+  <ul id="mensajes"></ul>
 
-    <button onclick="enviar()">Enviar</button>
+  <script>
+    const idstreaming = 1;
+    const socket = new WebSocket(`ws://18.220.9.56/ws/comentarios/${idstreaming}/`);
 
-    <h3>Mensajes:</h3>
-    <div id="comentarios"></div>
+    socket.onopen = () => {
+      console.log("Conectado al canal de comentarios");
+    };
 
-    <script>
-        const socket = new WebSocket(`ws://${window.location.host}/ws/comentarios/`);
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const li = document.createElement("li");
+      li.textContent = `[${data.fecha}] ${data.usuario}: ${data.comentario}`;
+      document.getElementById("mensajes").appendChild(li);
+    };
 
-        socket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            const comentarios = document.getElementById("comentarios");
-            comentarios.innerHTML += `<p><strong>${data.usuario}:</strong> ${data.comentario} <em>${data.fecha}</em></p>`;
-        };
+    socket.onclose = () => {
+      console.log("Conexión cerrada");
+    };
 
-        function enviar() {
-            const comentario = document.getElementById("mensaje").value;
-            const idusuario = document.getElementById("idusuario").value;
-            const idstreaming = document.getElementById("idstreaming").value;
+  function enviarComentario() {
+    const comentario = document.getElementById("comentario").value;
+    const idusuario = document.getElementById("idusuario").value;
 
-            if (!idusuario || !idstreaming || !comentario) {
-                alert("Debes llenar todos los campos.");
-                return;
-            }
+    if (!comentario.trim()) {
+      alert("Comentario vacío");
+      return;
+    }
 
-            socket.send(JSON.stringify({
-                comentario: comentario,
-                idusuario: idusuario,
-                idstreaming: idstreaming
-            }));
+    const mensaje = {
+      comentario: comentario,
+      idusuario: idusuario,
+      idstreaming: 1  // canal fijo para pruebas
+    };
 
-            document.getElementById("mensaje").value = '';
-        }
-    </script>
+    socket.send(JSON.stringify(mensaje));
+    document.getElementById("comentario").value = "";
+  }
+  </script>
 </body>
 </html>
