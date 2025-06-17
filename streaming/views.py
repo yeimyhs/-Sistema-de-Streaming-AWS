@@ -525,7 +525,7 @@ class RankingView(APIView):
                 'nro': idx,
                 'galpon': galpon.titulo,
                 'propietario': f"{galpon.idduenio.nombres} {galpon.idduenio.apellidos}" if galpon.idduenio else "Sin dueño",
-                'pais': galpon.pais.nombre if galpon.pais else "Desconocido",
+                'pais': galpon.pais if galpon.pais else "Desconocido",
                 'pg': item['pg'],
                 'pe': item['pe'],
                 'pp': item['pp'],

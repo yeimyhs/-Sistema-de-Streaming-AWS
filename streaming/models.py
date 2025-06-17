@@ -270,7 +270,7 @@ class Gallos(SoftDeleteModel):
 
 
 class Streaming(SoftDeleteModel):
-    idevento = models.ForeignKey(Evento, models.DO_NOTHING, db_column='idevento', blank=True, null=True)
+    idevento = models.OneToOneField(Evento, models.DO_NOTHING, db_column='idevento', blank=True, null=True)
     urlgrabacion = models.TextField( blank=True, null=True)
     nombrevideolife = models.TextField()
     idstreaming = models.BigAutoField(primary_key=True)

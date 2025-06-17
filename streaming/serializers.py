@@ -215,6 +215,14 @@ class EventoSerializer(ModelSerializer):
         participaciones = obj.evento_gallos_vs.filter(eliminado=0)
         serializer = ParticipacionGallosSerializer(participaciones, many=True)
         return serializer.data
+    def create(self, validated_data):
+        evento = super().create(validated_data)
+        Streaming.objects.create(
+            idevento=evento,
+            nombrevideolife="Streaming de " + str(evento.pk)  # ajusta si quieres
+        )
+        return evento
+
 
 class OnlyEventoSerializer(ModelSerializer):
 
