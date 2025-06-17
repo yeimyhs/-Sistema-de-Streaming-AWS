@@ -454,70 +454,63 @@ from datetime import timedelta
 
 class RankingView(APIView):
     def get(self, request):
-        # Obtenemos todas las participaciones de gallos en eventos
         participaciones = ParticipacionGallos.objects.select_related(
-            'idgalpon1', 'idgalpon2'
+            'idgalpon1', 'idgalpon2', 'idgalponganador'
         ).all()
 
         galpon_stats = {}
 
         for p in participaciones:
-            # Excluir participaciones anuladas o con datos nulos
-            if p.culminacion1 is None or p.culminacion2 is None or p.culminacion1 == '3' or p.culminacion2 == '3':
-                continue
+            g1 = p.idgalpon1
+            g2 = p.idgalpon2
+            ganador = p.idgalponganador
 
-            g1 = p.idgalpon1  # Galpón ganador
-            g2 = p.idgalpon2  # Galpón perdedor
-            resultado = p.idgalpon1 if p.culminacion1 == '1' else p.idgalpon2 if p.culminacion2 == '1' else None
-
-            # Inicializamos el diccionario de estadísticas para cada galpón
+            # Inicializar datos
             for g in [g1, g2]:
-                if not g:
-                    continue
-                if g.pk not in galpon_stats:
+                if g and g.pk not in galpon_stats:
                     galpon_stats[g.pk] = {
                         'galpon': g,
-                        'pg': 0,  # Victorias
-                        'pe': 0,  # Empates
-                        'pp': 0,  # Perdidas
-                        'puntaje': 0,  # Puntaje
-                        'tiempo': timedelta(0),  # Tiempo acumulado
+                        'pg': 0,
+                        'pe': 0,
+                        'pp': 0,
+                        'puntaje': 0,
+                        'tiempo': timedelta(0),
                     }
 
+            # Acumular tiempo de pelea
             if p.duracion:
                 if g1:
                     galpon_stats[g1.pk]['tiempo'] += p.duracion
                 if g2:
                     galpon_stats[g2.pk]['tiempo'] += p.duracion
 
-            # PG (Victorias)
-            if resultado:
-                galpon_stats[resultado.pk]['pg'] += 1
-
-            # PE (Empates)
-            empate = p.culminacion1 == '2' or p.culminacion2 == '2'
-            if empate:
-                if g1 and resultado != g1:
+            # Procesar resultado
+            if ganador:
+                galpon_stats[ganador.pk]['pg'] += 1
+                perdedor = g1 if ganador == g2 else g2
+                if perdedor:
+                    galpon_stats[perdedor.pk]['pp'] += 1
+            elif (p.culminacion1 == '2' or p.culminacion2 == '2'):
+                # Empate declarado
+                if g1:
                     galpon_stats[g1.pk]['pe'] += 1
-                if g2 and resultado != g2:
+                if g2:
                     galpon_stats[g2.pk]['pe'] += 1
+            else:
+                # Resultado no claro, se omite
+                continue
 
-        # Calcular PP (Perdidas) y puntaje
+        # Calcular puntaje (3 por victoria, 1 por empate)
         for stats in galpon_stats.values():
-            galpon = stats['galpon']
-            total_participaciones = ParticipacionGallos.objects.filter(
-                Q(idgalpon1=galpon) | Q(idgalpon2=galpon)
-            ).count()
-            stats['pp'] = total_participaciones - stats['pg'] - stats['pe']
             stats['puntaje'] = stats['pg'] * 3 + stats['pe']
 
-        # Ordenamos por puntaje y tiempo
+        # Ordenar
         ranking = sorted(
             galpon_stats.values(),
             key=lambda x: (-x['puntaje'], x['tiempo'])
         )
 
-        # Formateamos la respuesta
+        # Formatear respuesta
         response_data = []
         for idx, item in enumerate(ranking, start=1):
             galpon = item['galpon']
@@ -534,7 +527,6 @@ class RankingView(APIView):
             })
 
         return Response(response_data)
-
 
 from rest_framework.decorators import api_view
 @api_view(['POST'])
