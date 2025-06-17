@@ -282,8 +282,8 @@ class Streaming(SoftDeleteModel):
 
 class ParticipacionGallos(SoftDeleteModel):
     CULMINACION_OPCIONES = [
-    ("0", "Muerto"),
-    ("1", "Tumbado"),
+    ("0", "Muerto/Tumbado"),
+ 
     ("2", "Empate"),
     ("3", "Anulado"),
     ]
@@ -294,7 +294,6 @@ class ParticipacionGallos(SoftDeleteModel):
     culminacion1 = models.CharField(max_length=1, choices=CULMINACION_OPCIONES, blank=True, null=True)
     culminacion2 = models.CharField(max_length=1, choices=CULMINACION_OPCIONES, blank=True, null=True)
     idgalponganador = models.ForeignKey('Galpon', on_delete=models.CASCADE, related_name='idgalponganador', blank=True, null=True)
-    idgalponperdedor = models.ForeignKey('Galpon', on_delete=models.CASCADE, related_name='idgalponperdedor', blank=True, null=True)
     idgalpon1 = models.ForeignKey('Galpon', on_delete=models.CASCADE, related_name='idgalpon1', blank=True, null=True)
     idgalpon2 = models.ForeignKey('Galpon', on_delete=models.CASCADE, related_name='idgalpon2', blank=True, null=True)
     #idgalpon = models.ForeignKey(Galpon, models.DO_NOTHING, db_column='idgalpon', related_name='galpon_gallos')
