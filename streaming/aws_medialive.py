@@ -199,6 +199,7 @@ def listar_canales_medialive():
 
 def iniciar_canal(canal_id):
     response = client.start_channel(ChannelId=canal_id)
+    time.sleep(20)
     return client.describe_channel(ChannelId=canal_id)
 
 
