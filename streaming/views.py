@@ -4,7 +4,8 @@ from streaming.models import Carrusel, Comentario, Configuracion, Evento, Gallos
 from streaming.serializers import *
 from streaming.models import *
 
-
+from .filters import *
+from rest_framework import filters
 from .models import CustomUser
 
 from rest_framework import generics
@@ -90,6 +91,7 @@ class LoginView(KnoxLoginView):
 class DuenioViewSet(ModelViewSet):
     queryset = Duenio.objects.order_by('pk')
     serializer_class = DuenioSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['nombres', 'apellidos', 'telefono', 'email', 'estado']
     search_fields = ['nombres', 'apellidos', 'email']
         
@@ -97,18 +99,21 @@ class DuenioViewSet(ModelViewSet):
 class GalponViewSet(ModelViewSet):
     queryset = Galpon.objects.order_by('pk')
     serializer_class = GalponSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['titulo', 'idduenio', 'estado', 'pais']
     search_fields = ['titulo', 'descripcion']
     
 class FiestaViewSet(ModelViewSet):
     queryset = Fiesta.objects.order_by('pk')
     serializer_class = FiestaSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['titulo', 'fechainicio', 'fechafin', 'estado', 'precio']
     search_fields = ['titulo', 'descripcion']
     
 class CarruselViewSet(ModelViewSet):
     queryset = Carrusel.objects.order_by('pk')
     serializer_class = CarruselSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['titulo', 'fechapublicacion', 'estado']
     search_fields = ['titulo', 'descripcion']
 
@@ -116,6 +121,7 @@ class CarruselViewSet(ModelViewSet):
 class ComentarioViewSet(ModelViewSet):
     queryset = Comentario.objects.order_by('pk')
     serializer_class = ComentarioSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['idusuario', 'idstreaming', 'estado']
     search_fields = ['comentario']
 
@@ -123,6 +129,7 @@ class ComentarioViewSet(ModelViewSet):
 class ConfiguracionViewSet(ModelViewSet):
     queryset = Configuracion.objects.order_by('pk')
     serializer_class = ConfiguracionSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['nombreweb', 'correo', 'telefono', 'estadostreaming']
     search_fields = ['nombreweb', 'correo']
 
@@ -135,6 +142,7 @@ class EventoViewSet(ModelViewSet):
     'evento_gallos_vs__idgalpon2',
 ).order_by('pk')
     serializer_class = EventoSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['titulo', 'fechaevento', 'idfiesta', 'estado', 'isstreaming']
     search_fields = ['titulo', 'descripcion']
 
@@ -142,6 +150,7 @@ class EventoViewSet(ModelViewSet):
 class GallosViewSet(ModelViewSet):
     queryset = Gallos.objects.order_by('pk')
     serializer_class = GallosSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['nombre', 'peso', 'color', 'placa', 'anillo', 'experiencia']
     search_fields = ['nombre', 'color', 'placa', 'anillo', 'descripcion']
 
@@ -149,6 +158,7 @@ class GallosViewSet(ModelViewSet):
 class StreamingViewSet(ModelViewSet):
     queryset = Streaming.objects.order_by('pk')
     serializer_class = StreamingSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['idevento']
     search_fields = ['nombrevideolife', 'urlstreaming']
 
@@ -158,6 +168,7 @@ class UsuarioViewSet(ModelViewSet):
     serializer_class = UsuarioSerializer# CustomUserSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
             
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = [    'id', 'nombres', 'apellidos', 'telefono', 'eliminado', 'pais', 'ciudad', 'email', 'email_verified_at','is_staff',"estado"]
     
     search_fields = [
@@ -168,19 +179,19 @@ class UsuarioViewSet(ModelViewSet):
 class ParticipacionGallosViewSet(ModelViewSet):
     queryset = ParticipacionGallos.objects.order_by('pk')
     serializer_class = ParticipacionGallosSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['idgallo1', 'idgallo2','idevento', 'culminacion1', 'culminacion2', 'idgalpon1','idgalpon2','idgalponganador' ]
     search_fields = []
 
 from django.db.models import Prefetch
 class RegistroFiestaViewSet(ModelViewSet):
-    queryset = RegistroFiesta.objects.prefetch_related(
-        Prefetch(
-            'idfiesta__eventos__streaming_set',
-            queryset=Streaming.objects.all()
-        ),
-        'idfiesta__eventos'
-    ).select_related('idfiesta', 'idusuario')
+    queryset = RegistroFiesta.objects.select_related('idfiesta', 'idusuario').prefetch_related(
+    'idfiesta__eventos',
+    'idfiesta__eventos__streaming'  # si el OneToOne tiene related_name='streaming'
+)
+
     serializer_class = RegistroFiestaSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['idfiesta', 'idusuario', 'estado']
     search_fields = []
 
@@ -188,6 +199,7 @@ class EstadoViewSet(ModelViewSet):
     queryset = Estado.objects.order_by('pk')
     serializer_class = EstadoSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['valor', 'clave', 'descripcion', 'identificador_tabla', 'nombre_tabla']
     search_fields = ['valor', 'clave', 'descripcion', 'identificador_tabla', 'nombre_tabla']
     
@@ -196,12 +208,15 @@ class EstadoViewSet(ModelViewSet):
 #class GalponGallosViewSet(ModelViewSet):
  #   queryset = GalponGallos.objects.order_by('pk')
   #  serializer_class = GalponGallosSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
+   
    # filterset_fields = ['idgallo', 'idgalpon']
     #search_fields = []
 
 class GalponFiestaViewSet(ModelViewSet):
     queryset = GalponFiesta.objects.order_by('pk')
     serializer_class = GalponFiestaSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['idfiesta', 'idgalpon']
     search_fields = []
     
@@ -216,8 +231,17 @@ class GalponFiestaViewSet(ModelViewSet):
 class GalponGalloFiestaViewSet(ModelViewSet):
     queryset = GalponGalloFiesta.objects.order_by('pk')
     serializer_class = GalponGalloFiestaSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['idgalponfiesta', 'idgallo']
     search_fields = []
+
+class ubigeoPaisViewSet(ModelViewSet):
+    queryset = ubigeoPais.objects.order_by('pk')
+    serializer_class = ubigeoPaisSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
+    filterset_fields = ['idpais', 'nombre']
+    search_fields = ['nombre']
 
     
 from django.shortcuts import render
@@ -453,10 +477,20 @@ from datetime import timedelta
 
 
 class RankingView(APIView):
-    def get(self, request):
+    def get(self, request, fiesta_id=None):
         participaciones = ParticipacionGallos.objects.select_related(
-            'idgalpon1', 'idgalpon2', 'idgalponganador'
-        ).all()
+            'idgalpon1', 'idgalpon2', 'idgalponganador', 'idevento__idfiesta'
+        )
+
+        # Filtrar por fiesta si se proporcionó
+        idfiesta = fiesta_id
+        if idfiesta:
+            participaciones = participaciones.filter(idevento__idfiesta_id=idfiesta)
+
+        participaciones = participaciones.all()
+
+        if not participaciones.exists():
+            return Response([], status=200)
 
         galpon_stats = {}
 
@@ -465,7 +499,6 @@ class RankingView(APIView):
             g2 = p.idgalpon2
             ganador = p.idgalponganador
 
-            # Inicializar datos
             for g in [g1, g2]:
                 if g and g.pk not in galpon_stats:
                     galpon_stats[g.pk] = {
@@ -477,40 +510,33 @@ class RankingView(APIView):
                         'tiempo': timedelta(0),
                     }
 
-            # Acumular tiempo de pelea
             if p.duracion:
                 if g1:
                     galpon_stats[g1.pk]['tiempo'] += p.duracion
                 if g2:
                     galpon_stats[g2.pk]['tiempo'] += p.duracion
 
-            # Procesar resultado
             if ganador:
                 galpon_stats[ganador.pk]['pg'] += 1
                 perdedor = g1 if ganador == g2 else g2
                 if perdedor:
                     galpon_stats[perdedor.pk]['pp'] += 1
-            elif (p.culminacion1 == '2' or p.culminacion2 == '2'):
-                # Empate declarado
+            elif p.culminacion1 == '2' or p.culminacion2 == '2':
                 if g1:
                     galpon_stats[g1.pk]['pe'] += 1
                 if g2:
                     galpon_stats[g2.pk]['pe'] += 1
             else:
-                # Resultado no claro, se omite
                 continue
 
-        # Calcular puntaje (3 por victoria, 1 por empate)
         for stats in galpon_stats.values():
             stats['puntaje'] = stats['pg'] * 3 + stats['pe']
 
-        # Ordenar
         ranking = sorted(
             galpon_stats.values(),
             key=lambda x: (-x['puntaje'], x['tiempo'])
         )
 
-        # Formatear respuesta
         response_data = []
         for idx, item in enumerate(ranking, start=1):
             galpon = item['galpon']
@@ -784,3 +810,6 @@ def generar_emparejamientos(request, pk):
         return Response({'mensaje': resultado}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    

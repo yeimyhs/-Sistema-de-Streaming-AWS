@@ -464,3 +464,9 @@ class GalponGallodetalleFiestaSerializer(serializers.ModelSerializer):
     class Meta:
         model = GalponGalloFiesta
         fields = ['idgalponfiesta', 'gallo']
+        
+class ubigeoPaisSerializer(ModelSerializer):
+
+    class Meta:
+        model = ubigeoPais
+        fields = '__all__'

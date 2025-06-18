@@ -340,3 +340,11 @@ class GalponGalloFiesta(SoftDeleteModel):
 
     class Meta:
         db_table = 'galpon_gallo_fiesta'
+        
+class ubigeoPais(SoftDeleteModel):
+    idpais = models.CharField(max_length=255,primary_key=True)
+    abreviacion = models.CharField(max_length=10)
+    nombre = models.CharField(max_length=255)
+    
+    class Meta:
+        db_table = 'ubigeoPais'
