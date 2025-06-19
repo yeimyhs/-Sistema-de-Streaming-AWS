@@ -183,6 +183,7 @@ class CarruselSerializer(ModelSerializer):
         
         
 class ComentarioSerializer(ModelSerializer):
+    userdetalle = CustomUserSerializer(source='idusuario', read_only=True) 
 
     class Meta:
         model = Comentario
