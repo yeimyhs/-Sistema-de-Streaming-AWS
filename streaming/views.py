@@ -397,6 +397,7 @@ def detener_canal_view(request):
         
         streaming = Streaming.objects.get(idstreaming = idstreaming)
         nombrestreming = streaming.nombrevideolife
+        nombrestreming = nombrestreming.lower().replace(" ", "")
         
         # 🧠 Mover grabación y obtener nueva ubicación
         nueva_ubicacion = aws_medialive.mover_grabacion_a_nueva_ubicacion(canal_id, nombre_canal, nombrestreming)
