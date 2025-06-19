@@ -206,7 +206,7 @@ class GallosidGalponSerializer(ModelSerializer):
 
 class EventoSerializer(ModelSerializer):
     gallosvs = serializers.SerializerMethodField()
-
+    streaming = serializers.SerializerMethodField()
     class Meta:
         model = Evento
         fields = '__all__'
@@ -215,6 +215,15 @@ class EventoSerializer(ModelSerializer):
         participaciones = obj.evento_gallos_vs.filter(eliminado=0)
         serializer = ParticipacionGallosSerializer(participaciones, many=True)
         return serializer.data
+    def get_streaming(self, obj):
+        if hasattr(obj, 'streaming') and obj.streaming and obj.streaming.eliminado == 0:
+            return {
+                'idstreaming': obj.streaming.idstreaming,
+                'nombrevideolife': obj.streaming.nombrevideolife,
+                'urlgrabacion': obj.streaming.urlgrabacion,
+            }
+        return None
+
     def create(self, validated_data):
         evento = super().create(validated_data)
         Streaming.objects.create(
