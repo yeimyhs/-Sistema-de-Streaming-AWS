@@ -145,7 +145,7 @@ class Duenio(SoftDeleteModel):
     telefono = models.CharField(max_length=20, blank=True, null=True)
     fotoperfil = models.ImageField(upload_to='perfilDuenioimagen/', blank=True, null=True)
     email = models.EmailField(unique=True) 
-    idpais = models.ForeignKey('ubigeoPais', models.DO_NOTHING, db_column='idpais', blank=True, null=True)
+    pais = models.CharField(max_length=128, blank=True, null=True)
     
     fechacreacion = models.DateTimeField(auto_now_add=True)
     estado = models.IntegerField()
