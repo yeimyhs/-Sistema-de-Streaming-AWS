@@ -376,6 +376,11 @@ class StreamingEventoSerializer(ModelSerializer):
     class Meta:
         model = Streaming
         fields = '__all__'
+class StreamingOnlyEventoSerializer(ModelSerializer):
+    evento = OnlyEventoSerializer(source='idevento', read_only=True) 
+    class Meta:
+        model = Streaming
+        fields = '__all__'
 
 class UsuarioSerializer(ModelSerializer):
 
