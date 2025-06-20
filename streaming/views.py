@@ -157,7 +157,7 @@ class GallosViewSet(ModelViewSet):
 
 class StreamingViewSet(ModelViewSet):
     queryset = Streaming.objects.order_by('pk')
-    serializer_class = StreamingSerializer
+    serializer_class = StreamingEventoSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend, DateTimeIntervalFilter]
     filterset_fields = ['idevento']
     search_fields = ['nombrevideolife', 'urlstreaming']
