@@ -23,6 +23,9 @@ urlpatterns = [
     path("chat/", views.chat_view, name="chat"),
     path('chat/streaming/<int:streaming_id>/', views.chat_view_comment, name='chat_comentario'),
     
+    path('password-reset-request/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
+    path('password-reset/', views.PasswordResetView.as_view(), name='password_reset'),
+    
     
     path('channel/', views.CreateMediaLiveChannel.as_view(), name='create-medialive-channel'),
     path("crear-stream/", views.generar_stream, name="crear-stream"),

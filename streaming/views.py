@@ -814,3 +814,111 @@ def generar_emparejamientos(request, pk):
     
     
     
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.mail import send_mail
+import uuid
+from django.http import HttpResponse
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+
+class PasswordResetRequestView(APIView):
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = CustomUser.objects.get(email=email)
+
+            # Generar un token único
+            token_generator = PasswordResetTokenGenerator()
+            token = token_generator.make_token(user)
+            # Enviar correo
+            scheme = request.scheme  # 'http' o 'https'
+            host = request.get_host()  # Dominio del servidor
+            reset_link = f"{scheme}://{host}/streaming/password-reset?user_id={user.id}&token={token}"
+            send_mail(
+                "Recuperación de contraseña",
+                f"Usa este enlace para restablecer tu contraseña: {reset_link}",
+                "no-reply@example.com",
+                [email]
+            )
+            return Response({"message": "Correo de recuperación enviado."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+
+class PasswordResetView(APIView):
+    def get(self, request):
+        # Obtener parámetros de la URL
+        user_id = request.query_params.get("user_id")
+        token = request.query_params.get("token")
+
+        # Validar los parámetros
+        if not user_id or not token:
+            return Response({"error": "Faltan parámetros en la URL."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Usuario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        token_generator = PasswordResetTokenGenerator()
+        if not token_generator.check_token(user, token):
+            return Response({"error": "Token inválido o expirado."}, status=status.HTTP_400_BAD_REQUEST)
+
+  # Incrustar el HTML básico
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Restablecer Contraseña</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    margin: 50px;
+                    padding: 20px;
+                    text-align: center;
+                }}
+                form {{
+                    max-width: 400px;
+                    margin: auto;
+                }}
+                input {{
+                    width: 100%;
+                    padding: 10px;
+                    margin: 10px 0;
+                    box-sizing: border-box;
+                }}
+                button {{
+                    padding: 10px 20px;
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    cursor: pointer;
+                }}
+            </style>
+        </head>
+        <body>
+            <h1>Restablecer Contraseña</h1>
+            <form method="POST" action="/gestioninnovacion/login/">
+                <input type="hidden" name="user_id" value="{user_id}">
+                <input type="hidden" name="token" value="{token}">
+                <label for="new_password">Nueva Contraseña:</label>
+                <input type="password" id="new_password" name="new_password" required>
+                <label for="confirm_password">Confirmar Contraseña:</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+                <button type="submit">Restablecer</button>
+            </form>
+        </body>
+        </html>
+        """
+        return HttpResponse(html_content, content_type="text/html")
+        # Renderizar el formulario de restablecimiento de contraseña
+        #return render(request, "password_reset_form.html", {"user_id": user_id, "token": token})
+
+
+

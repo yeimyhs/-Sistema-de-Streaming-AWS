@@ -485,3 +485,12 @@ class ubigeoPaisSerializer(ModelSerializer):
     class Meta:
         model = ubigeoPais
         fields = '__all__'
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if not CustomUser.objects.filter(email=value).exists():
+            raise serializers.ValidationError("No se encontró un usuario con ese correo.")
+        return value
+    
