@@ -105,11 +105,24 @@ class CustomAuthTokenSerializer(serializers.Serializer):
         # Autenticar al usuario
         #user = authenticate(email=email, password=password)
        
-        user = CustomUser.objects.get(email=email)  # Buscar usuario por email
-        print(user)
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({
+                "error": {
+                    "code": "invalid_credentials",
+                    "message": "Las credenciales proporcionadas no son válidas. Por favor, intente de nuevo."
+                }
+            }, code="authorization")
 
-        if check_password(password, user.password):  # Comparar contraseñas
-            print("---")
+
+        if not check_password(password, user.password):
+            raise serializers.ValidationError({
+                "error": {
+                    "code": "invalid_credentials",
+                    "message": "Las credenciales proporcionadas no son válidas. Por favor, intente de nuevo."
+                }
+            }, code="authorization")
     
         # Validar credenciales inválidas
         if not user:
@@ -130,18 +143,6 @@ class CustomAuthTokenSerializer(serializers.Serializer):
                     "error": {
                         "code": "account_disabled",
                         "message": "Esta cuenta está deshabilitada. Contacte con el administrador."
-                    }
-                },
-                code="authorization",
-            )
-
-        # Validar si el usuario está inactivo
-        if not user.is_active:
-            raise serializers.ValidationError(
-                {
-                    "error": {
-                        "code": "account_inactive",
-                        "message": "Esta cuenta está inactiva. Por favor, contacte con el administrador."
                     }
                 },
                 code="authorization",
