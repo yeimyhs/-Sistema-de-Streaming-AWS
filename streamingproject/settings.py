@@ -31,7 +31,7 @@ ALLOWED_HOSTS = ['127.0.0.1','18.220.9.56','loaclhost', '127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',  # Asegúrate de que "daphne" está antes que 'django.contrib'
+     # Asegúrate de que "daphne" está antes que 'django.contrib'
     'channels',
     
     'django.contrib.admin',
@@ -90,7 +90,11 @@ ASGI_APPLICATION = 'streamingproject.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    },
+}
 
 DATABASES = {
     'default': {
@@ -192,7 +196,7 @@ STATIC_URL = '/streaming/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-MEDIA_URL = '/streaming/media/'  # URL pública para acceder a los archivos
+MEDIA_URL = 'http://18.220.9.56/media/'  # URL pública para acceder a los archivos
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Ruta donde se guardan los archivos físicamente
 
 # Otras configuraciones de archivos estáticos
@@ -200,12 +204,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),  # para archivos estáticos adicionales
 ]
 
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Para pruebas locales sin Redis
-    },
-}
 
 import os  # Importa os para manejar rutas
 
@@ -230,4 +228,21 @@ AWS_ACCESS_KEY_ID = "AKIARSEBI4OWVYVDKWNH"
 AWS_SECRET_ACCESS_KEY = "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"
 AWS_REGION = "us-west-2"
 AWS_MEDIALIVE_ROLE_ARN = "arn:aws:iam::107645297581:role/MediaLiveRole"
-AWS_MEDIALIVE_SECURITY_GROUP = "3364156"
+AWS_MEDIALIVE_SECURITY_GROUP = "4887929"
+
+
+AWS_ACCESS_KEY_ID = "AKIARSEBI4OWVYVDKWNH"
+AWS_SECRET_ACCESS_KEY = "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"
+AWS_REGION = "us-west-2"
+AWS_MEDIALIVE_ROLE_ARN = "arn:aws:iam::107645297581:role/MediaLiveRole"
+AWS_MEDIALIVE_SECURITY_GROUP ="4887929" #https://us-east-2.console.aws.amazon.com/medialive/home?region=us-east-2#/input-security-groups
+#"3364156"
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"  # Cambia esto según el proveedor
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER =os.getenv('EMAIL_HOST_USER', default='yhuancas@unsa.edu.pe')# "yhuancas@unsa.edu.pe"  # Coloca tu correo
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', default='bzneqbbqsawmgclb')#"bzneqbbqsawmgclb"  # Usa una variable de entorno para más seguridad
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Para que el remitente sea tu mismo correo
+
